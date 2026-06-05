@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from sqlalchemy import select
 
 from adwe.db.session import AsyncSessionLocal
@@ -48,3 +48,17 @@ async def list_workflows():
             select(Workflow).order_by(Workflow.created_at.desc())
         )
         return result.scalars().all()
+
+
+@router.get("/{workflow_id}", response_model=WorkflowRead)
+async def get_workflow(workflow_id: str):
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(Workflow).where(Workflow.id == workflow_id)
+        )
+        workflow = result.scalar_one_or_none()
+
+        if workflow is None:
+            raise HTTPException(status_code=404, detail="Workflow not found")
+
+        return workflow
