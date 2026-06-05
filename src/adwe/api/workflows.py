@@ -13,6 +13,12 @@ router = APIRouter(prefix="/v1/workflows", tags=["workflows"])
 @router.post("", response_model=WorkflowRead)
 async def create_workflow(payload: WorkflowCreate):
     async with AsyncSessionLocal() as session:
+        await record_audit_event(
+            session=session,
+            event_type="workflow.started",
+            payload={"repository_url": payload.repository_url},
+        )
+
         result = workflow_graph.invoke(
             {"repository_url": payload.repository_url}
         )
@@ -27,6 +33,27 @@ async def create_workflow(payload: WorkflowCreate):
 
         session.add(workflow)
         await session.flush()
+
+        await record_audit_event(
+            session=session,
+            workflow_id=workflow.id,
+            event_type="repository.analyzed",
+            payload=result.get("repository_analysis"),
+        )
+
+        await record_audit_event(
+            session=session,
+            workflow_id=workflow.id,
+            event_type="plan.generated",
+            payload=result.get("implementation_plan"),
+        )
+
+        await record_audit_event(
+            session=session,
+            workflow_id=workflow.id,
+            event_type="code_modification.proposed",
+            payload=result.get("code_modification"),
+        )
 
         await record_audit_event(
             session=session,
