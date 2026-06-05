@@ -109,6 +109,8 @@ async def run_workflow(workflow_id: str):
         if workflow is None:
             raise HTTPException(status_code=404, detail="Workflow not found")
 
+        workflow.status = "running"
+
         await record_audit_event(
             session=session,
             workflow_id=workflow.id,
@@ -116,21 +118,32 @@ async def run_workflow(workflow_id: str):
             payload={"repository_url": workflow.repository_url},
         )
 
-        graph_result = workflow_graph.invoke(
-            {"repository_url": workflow.repository_url}
-        )
+        try:
+            graph_result = workflow_graph.invoke(
+                {"repository_url": workflow.repository_url}
+            )
 
-        workflow.status = "completed"
-        workflow.repository_analysis = graph_result.get("repository_analysis")
-        workflow.implementation_plan = graph_result.get("implementation_plan")
-        workflow.code_modification = graph_result.get("code_modification")
+            workflow.status = "completed"
+            workflow.repository_analysis = graph_result.get("repository_analysis")
+            workflow.implementation_plan = graph_result.get("implementation_plan")
+            workflow.code_modification = graph_result.get("code_modification")
 
-        await record_audit_event(
-            session=session,
-            workflow_id=workflow.id,
-            event_type="workflow.completed",
-            payload=graph_result,
-        )
+            await record_audit_event(
+                session=session,
+                workflow_id=workflow.id,
+                event_type="workflow.completed",
+                payload=graph_result,
+            )
+
+        except Exception as exc:
+            workflow.status = "failed"
+
+            await record_audit_event(
+                session=session,
+                workflow_id=workflow.id,
+                event_type="workflow.failed",
+                payload={"error": str(exc)},
+            )
 
         await session.commit()
         await session.refresh(workflow)
