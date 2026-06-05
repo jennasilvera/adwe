@@ -15,4 +15,5 @@ class Workflow(Base):
     status: Mapped[str] = mapped_column(String, nullable=False, default="pending")
     repository_analysis: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     implementation_plan: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    code_modification: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
