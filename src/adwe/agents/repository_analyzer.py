@@ -5,7 +5,6 @@ from git import Repo
 
 from adwe.workflows.state import WorkflowState
 
-
 IGNORED_DIRS = {".git", ".venv", "__pycache__", "node_modules", ".pytest_cache"}
 
 
