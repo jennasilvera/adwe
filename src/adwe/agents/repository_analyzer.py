@@ -45,6 +45,34 @@ def analyze_repository(state: WorkflowState):
             for path in files
         )
 
+        api_routes = [
+            str(path.relative_to(repo_path))
+            for path in files
+            if "api" in path.parts and path.suffix == ".py"
+        ]
+
+        database_models = [
+            str(path.relative_to(repo_path))
+            for path in files
+            if "models" in path.parts and path.suffix == ".py"
+        ]
+
+        entrypoints = [
+            str(path.relative_to(repo_path))
+            for path in files
+            if path.name in {"main.py", "app.py", "server.py"}
+        ]
+
+        migration_count = len([
+            path for path in files
+            if "migrations" in path.parts and path.suffix == ".py"
+        ])
+
+        test_count = len([
+            path for path in files
+            if path.name.startswith("test_") and path.suffix == ".py"
+        ])
+
         detected_tools = {
             "docker": any(path.name in {"Dockerfile", "docker-compose.yml"} for path in files),
             "python_project": any(path.name == "pyproject.toml" for path in files),
@@ -58,6 +86,11 @@ def analyze_repository(state: WorkflowState):
             "file_count": len(relative_files),
             "languages": dict(languages),
             "detected_tools": detected_tools,
+            "entrypoints": entrypoints,
+            "api_routes": api_routes,
+            "database_models": database_models,
+            "migration_count": migration_count,
+            "test_count": test_count,
             "sample_files": relative_files[:30],
         }
     }
