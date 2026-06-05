@@ -15,5 +15,6 @@ class WorkflowRead(BaseModel):
     status: str
     created_at: datetime
     repository_analysis: dict[str, Any] | None = None
+    implementation_plan: dict[str, Any] | None = None
 
     model_config = {"from_attributes": True}
