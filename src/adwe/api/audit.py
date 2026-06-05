@@ -15,3 +15,14 @@ async def list_audit_events():
             select(AuditEvent).order_by(AuditEvent.created_at.desc())
         )
         return result.scalars().all()
+
+
+@router.get("/workflows/{workflow_id}", response_model=list[AuditEventRead])
+async def list_workflow_audit_events(workflow_id: str):
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(AuditEvent)
+            .where(AuditEvent.workflow_id == workflow_id)
+            .order_by(AuditEvent.created_at.asc())
+        )
+        return result.scalars().all()
