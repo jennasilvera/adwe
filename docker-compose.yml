@@ -1,4 +1,16 @@
 services:
+  api:
+    build: .
+    container_name: adwe-api
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://adwe:adwe@postgres:5432/adwe
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      - postgres
+      - redis
+
   postgres:
     image: postgres:16
     container_name: adwe-postgres

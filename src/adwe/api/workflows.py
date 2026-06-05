@@ -12,12 +12,15 @@ from adwe.models.workflow_status import WorkflowStatus
 from adwe.services.audit import record_audit_event
 from adwe.workflows.engine import workflow_graph
 
+from fastapi import APIRouter, BackgroundTasks, HTTPException
+from adwe.workers.workflow_runner import run_workflow
+
 router = APIRouter(prefix="/v1/workflows", tags=["workflows"])
 logger = logging.getLogger(__name__)
 
 
 @router.post("", response_model=WorkflowRead)
-async def create_workflow(payload: WorkflowCreate):
+async def create_workflow(payload: WorkflowCreate, background_tasks: BackgroundTasks):
     async with AsyncSessionLocal() as session:
         workflow = Workflow(
             repository_url=payload.repository_url,
@@ -35,6 +38,7 @@ async def create_workflow(payload: WorkflowCreate):
         )
 
         await session.commit()
+        background_tasks.add_task(run_workflow, workflow.id)
         await session.refresh(workflow)
 
         return workflow
