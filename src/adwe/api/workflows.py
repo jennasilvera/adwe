@@ -5,6 +5,7 @@ from sqlalchemy import select
 
 from adwe.db.session import AsyncSessionLocal
 from adwe.models.workflow import Workflow
+from adwe.models.patch import Patch
 from adwe.models.workflow_schema import WorkflowCreate, WorkflowRead
 from adwe.models.workflow_status import WorkflowStatus
 from adwe.services.audit import record_audit_event
@@ -92,6 +93,17 @@ async def run_workflow(workflow_id: str):
             workflow.repository_analysis = graph_result.get("repository_analysis")
             workflow.implementation_plan = graph_result.get("implementation_plan")
             workflow.code_modification = graph_result.get("code_modification")
+
+            code_modification = graph_result.get("code_modification") or {}
+            if code_modification.get("diff"):
+                session.add(
+                    Patch(
+                        workflow_id=workflow.id,
+                        file_path="README.md",
+                        diff=code_modification["diff"],
+                        status=code_modification.get("status", "proposed"),
+                    )
+                )
 
             await record_audit_event(
                 session=session,
