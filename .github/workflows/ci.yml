@@ -37,3 +37,6 @@ jobs:
 
       - name: Run tests
         run: PYTHONPATH=src uv run pytest
+
+      - name: Validate Docker Compose
+        run: docker compose config
