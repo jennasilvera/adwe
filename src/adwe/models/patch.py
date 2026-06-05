@@ -5,6 +5,7 @@ from sqlalchemy import DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from adwe.db.base import Base
+from adwe.models.patch_status import PatchStatus
 
 
 class Patch(Base):
@@ -14,5 +15,5 @@ class Patch(Base):
     workflow_id: Mapped[str] = mapped_column(String, nullable=False)
     file_path: Mapped[str] = mapped_column(String, nullable=False)
     diff: Mapped[str] = mapped_column(String, nullable=False)
-    status: Mapped[str] = mapped_column(String, nullable=False, default="proposed")
+    status: Mapped[str] = mapped_column(String, nullable=False, default=PatchStatus.PROPOSED)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

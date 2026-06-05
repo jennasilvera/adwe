@@ -6,6 +6,7 @@ from sqlalchemy import select
 from adwe.db.session import AsyncSessionLocal
 from adwe.models.workflow import Workflow
 from adwe.models.patch import Patch
+from adwe.models.patch_status import PatchStatus
 from adwe.models.workflow_schema import WorkflowCreate, WorkflowRead
 from adwe.models.workflow_status import WorkflowStatus
 from adwe.services.audit import record_audit_event
@@ -101,7 +102,7 @@ async def run_workflow(workflow_id: str):
                         workflow_id=workflow.id,
                         file_path="README.md",
                         diff=code_modification["diff"],
-                        status=code_modification.get("status", "proposed"),
+                        status=code_modification.get("status", PatchStatus.PROPOSED),
                     )
                 )
 
