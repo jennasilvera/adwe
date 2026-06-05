@@ -21,6 +21,7 @@ if config.config_file_name is not None:
 from adwe.db.base import Base
 from adwe.models.workflow import Workflow
 from adwe.models.audit_event import AuditEvent
+from adwe.models.patch import Patch
 
 target_metadata=Base.metadata
 
