@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, HTTPException
 from sqlalchemy import select
 
@@ -8,6 +10,7 @@ from adwe.workflows.engine import workflow_graph
 from adwe.services.audit import record_audit_event
 
 router = APIRouter(prefix="/v1/workflows", tags=["workflows"])
+logger = logging.getLogger(__name__)
 
 
 @router.post("", response_model=WorkflowRead)
@@ -18,6 +21,8 @@ async def create_workflow(payload: WorkflowCreate):
             event_type="workflow.started",
             payload={"repository_url": payload.repository_url},
         )
+
+        logger.info("workflow_started repository_url=%s", payload.repository_url)
 
         result = workflow_graph.invoke(
             {"repository_url": payload.repository_url}
@@ -64,6 +69,8 @@ async def create_workflow(payload: WorkflowCreate):
 
         await session.commit()
         await session.refresh(workflow)
+
+        logger.info("workflow_completed workflow_id=%s status=%s", workflow.id, workflow.status)
 
         return workflow
 
