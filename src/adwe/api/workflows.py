@@ -5,6 +5,7 @@ from adwe.db.session import AsyncSessionLocal
 from adwe.models.workflow import Workflow
 from adwe.models.workflow_schema import WorkflowCreate, WorkflowRead
 from adwe.workflows.engine import workflow_graph
+from adwe.services.audit import record_audit_event
 
 router = APIRouter(prefix="/v1/workflows", tags=["workflows"])
 
@@ -24,6 +25,15 @@ async def create_workflow(payload: WorkflowCreate):
         )
 
         session.add(workflow)
+        await session.flush()
+
+        await record_audit_event(
+            session=session,
+            workflow_id=workflow.id,
+            event_type="workflow.completed",
+            payload=result,
+        )
+
         await session.commit()
         await session.refresh(workflow)
 
