@@ -5,6 +5,7 @@ from adwe.db.session import AsyncSessionLocal
 from adwe.models.patch import Patch
 from adwe.models.patch_schema import PatchRead
 from adwe.models.patch_status import PatchStatus
+from adwe.services.audit import record_audit_event
 
 router = APIRouter(prefix="/v1/patches", tags=["patches"])
 
@@ -46,6 +47,16 @@ async def mark_patch_applied(patch_id: str):
             raise HTTPException(status_code=404, detail="Patch not found")
 
         patch.status = PatchStatus.APPLIED
+
+        await record_audit_event(
+            session=session,
+            workflow_id=patch.workflow_id,
+            event_type="patch.applied",
+            payload={
+                "patch_id": patch.id,
+                "file_path": patch.file_path,
+            },
+        )
 
         await session.commit()
         await session.refresh(patch)
