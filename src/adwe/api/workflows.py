@@ -6,8 +6,9 @@ from sqlalchemy import select
 from adwe.db.session import AsyncSessionLocal
 from adwe.models.workflow import Workflow
 from adwe.models.workflow_schema import WorkflowCreate, WorkflowRead
-from adwe.workflows.engine import workflow_graph
+from adwe.models.workflow_status import WorkflowStatus
 from adwe.services.audit import record_audit_event
+from adwe.workflows.engine import workflow_graph
 
 router = APIRouter(prefix="/v1/workflows", tags=["workflows"])
 logger = logging.getLogger(__name__)
@@ -16,24 +17,9 @@ logger = logging.getLogger(__name__)
 @router.post("", response_model=WorkflowRead)
 async def create_workflow(payload: WorkflowCreate):
     async with AsyncSessionLocal() as session:
-        await record_audit_event(
-            session=session,
-            event_type="workflow.started",
-            payload={"repository_url": payload.repository_url},
-        )
-
-        logger.info("workflow_started repository_url=%s", payload.repository_url)
-
-        result = workflow_graph.invoke(
-            {"repository_url": payload.repository_url}
-        )
-
         workflow = Workflow(
             repository_url=payload.repository_url,
-            status="completed",
-            repository_analysis=result.get("repository_analysis"),
-            implementation_plan=result.get("implementation_plan"),
-            code_modification=result.get("code_modification"),
+            status=WorkflowStatus.PENDING,
         )
 
         session.add(workflow)
@@ -42,35 +28,12 @@ async def create_workflow(payload: WorkflowCreate):
         await record_audit_event(
             session=session,
             workflow_id=workflow.id,
-            event_type="repository.analyzed",
-            payload=result.get("repository_analysis"),
-        )
-
-        await record_audit_event(
-            session=session,
-            workflow_id=workflow.id,
-            event_type="plan.generated",
-            payload=result.get("implementation_plan"),
-        )
-
-        await record_audit_event(
-            session=session,
-            workflow_id=workflow.id,
-            event_type="code_modification.proposed",
-            payload=result.get("code_modification"),
-        )
-
-        await record_audit_event(
-            session=session,
-            workflow_id=workflow.id,
-            event_type="workflow.completed",
-            payload=result,
+            event_type="workflow.created",
+            payload={"repository_url": payload.repository_url},
         )
 
         await session.commit()
         await session.refresh(workflow)
-
-        logger.info("workflow_completed workflow_id=%s status=%s", workflow.id, workflow.status)
 
         return workflow
 
@@ -109,7 +72,7 @@ async def run_workflow(workflow_id: str):
         if workflow is None:
             raise HTTPException(status_code=404, detail="Workflow not found")
 
-        workflow.status = "running"
+        workflow.status = WorkflowStatus.RUNNING
 
         await record_audit_event(
             session=session,
@@ -119,11 +82,13 @@ async def run_workflow(workflow_id: str):
         )
 
         try:
+            logger.info("workflow_started workflow_id=%s", workflow.id)
+
             graph_result = workflow_graph.invoke(
                 {"repository_url": workflow.repository_url}
             )
 
-            workflow.status = "completed"
+            workflow.status = WorkflowStatus.COMPLETED
             workflow.repository_analysis = graph_result.get("repository_analysis")
             workflow.implementation_plan = graph_result.get("implementation_plan")
             workflow.code_modification = graph_result.get("code_modification")
@@ -135,8 +100,10 @@ async def run_workflow(workflow_id: str):
                 payload=graph_result,
             )
 
+            logger.info("workflow_completed workflow_id=%s", workflow.id)
+
         except Exception as exc:
-            workflow.status = "failed"
+            workflow.status = WorkflowStatus.FAILED
 
             await record_audit_event(
                 session=session,
@@ -144,6 +111,8 @@ async def run_workflow(workflow_id: str):
                 event_type="workflow.failed",
                 payload={"error": str(exc)},
             )
+
+            logger.exception("workflow_failed workflow_id=%s", workflow.id)
 
         await session.commit()
         await session.refresh(workflow)
