@@ -3,6 +3,7 @@ from adwe.core.logging import configure_logging
 from sqlalchemy import text
 
 from adwe.api.workflows import router as workflows_router
+from adwe.api.middleware import RequestIDMiddleware
 from adwe.api.audit import router as audit_router
 from adwe.db.session import engine
 
@@ -10,6 +11,7 @@ configure_logging()
 
 app = FastAPI(title="Agentic Development Workflow Engine")
 
+app.add_middleware(RequestIDMiddleware)
 app.include_router(workflows_router)
 app.include_router(audit_router)
 
