@@ -96,3 +96,43 @@ async def get_workflow(workflow_id: str):
             raise HTTPException(status_code=404, detail="Workflow not found")
 
         return workflow
+
+
+@router.post("/{workflow_id}/run", response_model=WorkflowRead)
+async def run_workflow(workflow_id: str):
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(Workflow).where(Workflow.id == workflow_id)
+        )
+        workflow = result.scalar_one_or_none()
+
+        if workflow is None:
+            raise HTTPException(status_code=404, detail="Workflow not found")
+
+        await record_audit_event(
+            session=session,
+            workflow_id=workflow.id,
+            event_type="workflow.started",
+            payload={"repository_url": workflow.repository_url},
+        )
+
+        graph_result = workflow_graph.invoke(
+            {"repository_url": workflow.repository_url}
+        )
+
+        workflow.status = "completed"
+        workflow.repository_analysis = graph_result.get("repository_analysis")
+        workflow.implementation_plan = graph_result.get("implementation_plan")
+        workflow.code_modification = graph_result.get("code_modification")
+
+        await record_audit_event(
+            session=session,
+            workflow_id=workflow.id,
+            event_type="workflow.completed",
+            payload=graph_result,
+        )
+
+        await session.commit()
+        await session.refresh(workflow)
+
+        return workflow
