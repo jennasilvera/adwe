@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from prometheus_fastapi_instrumentator import Instrumentator
 from adwe.core.logging import configure_logging
 from sqlalchemy import text
 
@@ -14,6 +15,8 @@ app = FastAPI(title="Agentic Development Workflow Engine")
 app.add_middleware(RequestIDMiddleware)
 app.include_router(workflows_router)
 app.include_router(audit_router)
+
+Instrumentator().instrument(app).expose(app)
 
 
 @app.get("/v1/health")
