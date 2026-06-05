@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from sqlalchemy import select
 
 from adwe.db.session import AsyncSessionLocal
@@ -17,3 +17,17 @@ async def list_workflow_patches(workflow_id: str):
             .order_by(Patch.created_at.asc())
         )
         return result.scalars().all()
+
+
+@router.get("/{patch_id}", response_model=PatchRead)
+async def get_patch(patch_id: str):
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(Patch).where(Patch.id == patch_id)
+        )
+        patch = result.scalar_one_or_none()
+
+        if patch is None:
+            raise HTTPException(status_code=404, detail="Patch not found")
+
+        return patch
