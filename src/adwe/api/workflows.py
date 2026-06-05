@@ -19,6 +19,7 @@ async def create_workflow(payload: WorkflowCreate):
         workflow = Workflow(
             repository_url=payload.repository_url,
             status="completed",
+            repository_analysis=result.get("repository_analysis"),
         )
 
         session.add(workflow)
