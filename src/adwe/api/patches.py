@@ -52,7 +52,7 @@ async def approve_patch(workflow_id: str, patch_id: str):
             session=session,
             workflow_id=workflow_id,
             event_type="patch.approved",
-            payload={"patch_id": patch_id, "file_path": patch.file_path, "queue_job_id": job_id},
+            payload={"patch_id": patch_id, "file_path": patch.file_path},
         )
 
         await session.commit()
