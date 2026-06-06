@@ -18,6 +18,7 @@ def apply_patch_workflow(
     diff: str,
     commit_message: str,
     test_command: list[str] | None = None,
+    dry_run: bool = False,
 ) -> dict:
     with tempfile.TemporaryDirectory() as tmpdir:
         repo_path = Path(tmpdir) / "repo"
@@ -34,6 +35,14 @@ def apply_patch_workflow(
                 raise PatchWorkflowError(
                     f"Tests failed with exit code {test_result['exit_code']}"
                 )
+
+        if dry_run:
+            return {
+                "branch_name": branch_name,
+                "commit_sha": None,
+                "status": "validated",
+                "test_result": test_result,
+            }
 
         commit_sha = commit_changes(repo_path, commit_message)
 

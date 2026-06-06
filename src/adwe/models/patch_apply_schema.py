@@ -9,10 +9,11 @@ class PatchApplyRequest(BaseModel):
     diff: str
     commit_message: str
     test_command: list[str] | None = None
+    dry_run: bool = False
 
 
 class PatchApplyResponse(BaseModel):
     branch_name: str
-    commit_sha: str
+    commit_sha: str | None = None
     status: str
     test_result: dict[str, Any] | None = None
