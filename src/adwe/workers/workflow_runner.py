@@ -5,6 +5,8 @@ from sqlalchemy import select
 
 from adwe.core.constants import MAX_WORKFLOW_RETRIES
 from adwe.db.session import AsyncSessionLocal
+from adwe.models.patch import Patch
+from adwe.models.patch_status import PatchStatus
 from adwe.models.workflow import Workflow
 from adwe.models.workflow_status import WorkflowStatus
 from adwe.workflows.engine import workflow_graph
@@ -36,6 +38,19 @@ async def run_workflow(ctx, workflow_id: str):
             workflow.repository_analysis = result.get("repository_analysis")
             workflow.implementation_plan = result.get("implementation_plan")
             workflow.code_modification = result.get("code_modification")
+
+            code_modification = result.get("code_modification") or {}
+            diff = code_modification.get("patch") or code_modification.get("diff")
+
+            if diff:
+                session.add(
+                    Patch(
+                        workflow_id=workflow.id,
+                        file_path="README.md",
+                        diff=diff,
+                        status=PatchStatus.PROPOSED,
+                    )
+                )
 
             workflow.status = WorkflowStatus.COMPLETED
             workflow.completed_at = datetime.utcnow()
