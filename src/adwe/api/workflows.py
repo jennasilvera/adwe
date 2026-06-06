@@ -3,7 +3,7 @@ from adwe.models.pull_request_record_schema import PullRequestRecordRead
 from arq import create_pool
 from fastapi import APIRouter, HTTPException
 from sqlalchemy import select
-
+from adwe.models.workflow_artifacts_schema import WorkflowArtifactsRead
 from adwe.db.session import AsyncSessionLocal
 from adwe.models.workflow import Workflow
 from adwe.models.workflow_schema import WorkflowCreate, WorkflowRead
@@ -140,7 +140,7 @@ async def get_workflow_summary(workflow_id: str):
         }
 
 
-@router.get("/{workflow_id}/artifacts")
+@router.get("/{workflow_id}/artifacts", response_model=WorkflowArtifactsRead)
 async def get_workflow_artifacts(workflow_id: str):
     async with AsyncSessionLocal() as session:
         workflow = await session.get(Workflow, workflow_id)
