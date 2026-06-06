@@ -19,6 +19,17 @@ async def list_workflow_patches(workflow_id: str):
         return result.scalars().all()
 
 
+@router.get("/{workflow_id}/patches/{patch_id}", response_model=PatchRead)
+async def get_workflow_patch(workflow_id: str, patch_id: str):
+    async with AsyncSessionLocal() as session:
+        patch = await session.get(Patch, patch_id)
+
+        if patch is None or patch.workflow_id != workflow_id:
+            raise HTTPException(status_code=404, detail="Patch not found")
+
+        return patch
+
+
 @router.post("/{workflow_id}/patches/{patch_id}/approve", response_model=PatchRead)
 async def approve_patch(workflow_id: str, patch_id: str):
     async with AsyncSessionLocal() as session:
