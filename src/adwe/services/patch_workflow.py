@@ -7,10 +7,7 @@ from adwe.services.github_pr import create_pull_request
 from adwe.services.patch_apply import apply_patch
 from adwe.services.repository_clone import clone_repository
 from adwe.services.test_runner import run_tests
-
-
-class PatchWorkflowError(Exception):
-    pass
+from adwe.services.errors import PatchApplyWorkflowError, TestExecutionError
 
 
 def apply_patch_workflow(
@@ -36,7 +33,7 @@ def apply_patch_workflow(
             test_result = run_tests(repo_path, test_command)
 
             if not test_result["passed"]:
-                raise PatchWorkflowError(
+                raise TestExecutionError(
                     f"Tests failed with exit code {test_result['exit_code']}"
                 )
 

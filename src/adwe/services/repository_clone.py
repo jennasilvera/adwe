@@ -3,6 +3,7 @@ from pathlib import Path
 from git import Repo
 
 from adwe.core.config import settings
+from adwe.services.errors import RepositoryCloneError
 
 
 def build_clone_url(repository_url: str) -> str:
@@ -17,6 +18,9 @@ def build_clone_url(repository_url: str) -> str:
 
 
 def clone_repository(repository_url: str, destination: Path) -> Path:
-    clone_url = build_clone_url(repository_url)
-    Repo.clone_from(clone_url, destination)
-    return destination
+    try:
+        clone_url = build_clone_url(repository_url)
+        Repo.clone_from(clone_url, destination)
+        return destination
+    except Exception as exc:
+        raise RepositoryCloneError(str(exc)) from exc
