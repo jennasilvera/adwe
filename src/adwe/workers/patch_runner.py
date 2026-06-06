@@ -3,6 +3,7 @@ import logging
 from adwe.db.session import AsyncSessionLocal
 from adwe.models.patch import Patch
 from adwe.models.patch_status import PatchStatus
+from adwe.services.audit import record_audit_event
 
 logger = logging.getLogger(__name__)
 
@@ -16,10 +17,24 @@ async def apply_patch_job(ctx, patch_id: str):
             return
 
         patch.status = PatchStatus.APPLYING
+
+        await record_audit_event(
+            session=session,
+            workflow_id=patch.workflow_id,
+            event_type="patch.applying",
+            payload={"patch_id": patch.id, "file_path": patch.file_path},
+        )
+
         await session.commit()
 
         # Real repository patch application will be wired here.
-        # For now, mark the queued job path as successful.
         patch.status = PatchStatus.APPLIED
+
+        await record_audit_event(
+            session=session,
+            workflow_id=patch.workflow_id,
+            event_type="patch.applied",
+            payload={"patch_id": patch.id, "file_path": patch.file_path},
+        )
 
         await session.commit()
