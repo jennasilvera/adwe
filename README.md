@@ -1,3 +1,7 @@
+# Agentic Development Workflow Engine
+
+![CI](https://github.com/jennasilvera/adwe/actions/workflows/ci.yml/badge.svg)
+
 ## Local Development
 
 Start infrastructure and API:
