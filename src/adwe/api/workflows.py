@@ -4,6 +4,7 @@ from arq import create_pool
 from fastapi import APIRouter, HTTPException
 from sqlalchemy import select
 from adwe.models.workflow_artifacts_schema import WorkflowArtifactsRead
+from adwe.models.workflow_summary_schema import WorkflowSummaryRead
 from adwe.db.session import AsyncSessionLocal
 from adwe.models.workflow import Workflow
 from adwe.models.workflow_schema import WorkflowCreate, WorkflowRead
