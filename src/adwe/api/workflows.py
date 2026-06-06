@@ -1,5 +1,5 @@
 import logging
-
+from adwe.models.pull_request_record_schema import PullRequestRecordRead
 from arq import create_pool
 from fastapi import APIRouter, HTTPException
 from sqlalchemy import select
@@ -89,3 +89,24 @@ async def run_workflow_endpoint(workflow_id: str):
         await session.refresh(workflow)
 
         return workflow
+
+
+@router.get("/{workflow_id}/pull-request", response_model=PullRequestRecordRead)
+async def get_workflow_pull_request(workflow_id: str):
+    async with AsyncSessionLocal() as session:
+        workflow = await session.get(Workflow, workflow_id)
+
+        if workflow is None:
+            raise HTTPException(status_code=404, detail="Workflow not found")
+
+        if workflow.pull_request_id is None:
+            raise HTTPException(status_code=404, detail="Pull request not found")
+
+        from adwe.models.pull_request import PullRequest
+
+        pull_request = await session.get(PullRequest, workflow.pull_request_id)
+
+        if pull_request is None:
+            raise HTTPException(status_code=404, detail="Pull request not found")
+
+        return pull_request
