@@ -31,10 +31,16 @@ async def get_workflow_metrics() -> dict:
             )
         )
 
+        total_count = total or 0
+        completed_count = completed or 0
+        failed_count = failed or 0
+
         return {
-            "total": total or 0,
-            "completed": completed or 0,
-            "failed": failed or 0,
+            "total": total_count,
+            "completed": completed_count,
+            "failed": failed_count,
             "running": running or 0,
+            "success_rate": completed_count / total_count if total_count else 0,
+            "failure_rate": failed_count / total_count if total_count else 0,
             "average_duration_seconds": float(avg_duration) if avg_duration else None,
         }
