@@ -17,3 +17,6 @@ class Patch(Base):
     diff: Mapped[str] = mapped_column(String, nullable=False)
     status: Mapped[str] = mapped_column(String, nullable=False, default=PatchStatus.PROPOSED)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    branch_name: Mapped[str | None] = mapped_column(String, nullable=True)
+    commit_sha: Mapped[str | None] = mapped_column(String, nullable=True)
+    apply_error: Mapped[str | None] = mapped_column(String, nullable=True)
