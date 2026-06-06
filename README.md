@@ -49,3 +49,11 @@ Planned next features:
 - GitHub branch push support
 - End-to-end pull request automation
 - Role-based access control
+
+## End-to-End Demo
+
+Start the full local stack:
+
+```bash
+docker compose up --build
+
