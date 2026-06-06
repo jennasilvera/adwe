@@ -1,4 +1,4 @@
-import asyncio
+from datetime import datetime
 import logging
 
 from sqlalchemy import select
@@ -22,6 +22,7 @@ async def run_workflow(ctx, workflow_id: str):
             return
 
         workflow.status = WorkflowStatus.RUNNING
+        workflow.started_at = datetime.utcnow()
         await session.commit()
 
         try:
@@ -42,8 +43,9 @@ async def run_workflow(ctx, workflow_id: str):
             )
 
             workflow.status = WorkflowStatus.COMPLETED
+            workflow.completed_at = datetime.utcnow()
 
-        except Exception as e:
+        except Exception:
 
             logger.exception(
                 "workflow_failed workflow_id=%s",
@@ -51,5 +53,6 @@ async def run_workflow(ctx, workflow_id: str):
             )
 
             workflow.status = WorkflowStatus.FAILED
+            workflow.completed_at = datetime.utcnow()
 
         await session.commit()

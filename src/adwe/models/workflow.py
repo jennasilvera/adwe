@@ -14,7 +14,15 @@ class Workflow(Base):
     repository_url: Mapped[str] = mapped_column(String, nullable=False)
     queue_job_id: Mapped[str | None] = mapped_column(String, nullable=True)
     status: Mapped[str] = mapped_column(String, nullable=False, default="pending")
+
     repository_analysis: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     implementation_plan: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     code_modification: Mapped[dict | None] = mapped_column(JSON, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    started_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.utcnow,
+    )
