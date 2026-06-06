@@ -1,22 +1,27 @@
 from fastapi import FastAPI
 from prometheus_fastapi_instrumentator import Instrumentator
-from adwe.core.logging import configure_logging
 from sqlalchemy import text
 
-from adwe.api.workflows import router as workflows_router
-from adwe.api.middleware import RequestIDMiddleware
 from adwe.api.audit import router as audit_router
-from adwe.api.patches import router as patches_router
+from adwe.api.middleware import RequestIDMiddleware
 from adwe.api.patch_apply import router as patch_apply_router
 from adwe.api.patch_preview import router as patch_preview_router
+from adwe.api.patches import router as patches_router
 from adwe.api.pull_requests import router as pull_requests_router
+from adwe.api.workflows import router as workflows_router
+from adwe.core.logging import configure_logging
 from adwe.db.session import engine
 
 configure_logging()
 
-app = FastAPI(title="Agentic Development Workflow Engine")
+app = FastAPI(
+    title="Agentic Development Workflow Engine",
+    description="A platform for repository analysis, agentic planning, patch generation, test execution, audit logging, and pull request automation.",
+    version="0.1.0",
+)
 
 app.add_middleware(RequestIDMiddleware)
+
 app.include_router(workflows_router)
 app.include_router(audit_router)
 app.include_router(patches_router)
@@ -27,7 +32,7 @@ app.include_router(pull_requests_router)
 Instrumentator().instrument(app).expose(app)
 
 
-@app.get("/v1/health")
+@app.get("/v1/health", tags=["health"])
 async def health():
     async with engine.connect() as conn:
         await conn.execute(text("SELECT 1"))
