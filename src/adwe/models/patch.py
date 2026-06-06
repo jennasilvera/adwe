@@ -20,3 +20,4 @@ class Patch(Base):
     branch_name: Mapped[str | None] = mapped_column(String, nullable=True)
     commit_sha: Mapped[str | None] = mapped_column(String, nullable=True)
     apply_error: Mapped[str | None] = mapped_column(String, nullable=True)
+    push_requested: Mapped[bool] = mapped_column(default=False)

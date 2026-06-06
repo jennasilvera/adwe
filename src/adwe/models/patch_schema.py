@@ -15,3 +15,4 @@ class PatchRead(BaseModel):
     branch_name: str | None = None
     commit_sha: str | None = None
     apply_error: str | None = None
+    push_requested: bool = False
