@@ -1,3 +1,4 @@
+from arq import create_pool
 from fastapi import APIRouter, HTTPException
 from sqlalchemy import select
 from adwe.models.patch_summary_schema import PatchSummaryRead
@@ -6,8 +7,15 @@ from adwe.models.patch import Patch
 from adwe.models.patch_schema import PatchRead
 from adwe.models.patch_status import PatchStatus
 from adwe.services.audit import record_audit_event
+from adwe.workers.queue import get_redis_settings
 
 router = APIRouter(prefix="/v1/workflows", tags=["patches"])
+
+
+async def enqueue_patch_apply(patch_id: str) -> str:
+    redis = await create_pool(get_redis_settings())
+    job = await redis.enqueue_job("apply_patch_job", patch_id)
+    return job.job_id
 
 
 @router.get("/{workflow_id}/patches", response_model=list[PatchRead])
@@ -44,7 +52,7 @@ async def approve_patch(workflow_id: str, patch_id: str):
             session=session,
             workflow_id=workflow_id,
             event_type="patch.approved",
-            payload={"patch_id": patch_id, "file_path": patch.file_path},
+            payload={"patch_id": patch_id, "file_path": patch.file_path, "queue_job_id": job_id},
         )
 
         await session.commit()
@@ -67,7 +75,7 @@ async def reject_patch(workflow_id: str, patch_id: str):
             session=session,
             workflow_id=workflow_id,
             event_type="patch.rejected",
-            payload={"patch_id": patch_id, "file_path": patch.file_path},
+            payload={"patch_id": patch_id, "file_path": patch.file_path, "queue_job_id": job_id},
         )
 
         await session.commit()
@@ -109,11 +117,13 @@ async def apply_approved_patch(workflow_id: str, patch_id: str):
 
         patch.status = PatchStatus.APPLYING
 
+        job_id = await enqueue_patch_apply(patch_id)
+
         await record_audit_event(
             session=session,
             workflow_id=workflow_id,
             event_type="patch.apply_requested",
-            payload={"patch_id": patch_id, "file_path": patch.file_path},
+            payload={"patch_id": patch_id, "file_path": patch.file_path, "queue_job_id": job_id},
         )
 
         await session.commit()
