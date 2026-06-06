@@ -110,3 +110,31 @@ async def get_workflow_pull_request(workflow_id: str):
             raise HTTPException(status_code=404, detail="Pull request not found")
 
         return pull_request
+
+
+@router.get("/{workflow_id}/summary")
+async def get_workflow_summary(workflow_id: str):
+    async with AsyncSessionLocal() as session:
+        workflow = await session.get(Workflow, workflow_id)
+
+        if workflow is None:
+            raise HTTPException(status_code=404, detail="Workflow not found")
+
+        analysis = workflow.repository_analysis or {}
+        plan = workflow.implementation_plan or {}
+
+        return {
+            "id": workflow.id,
+            "repository_url": workflow.repository_url,
+            "status": workflow.status,
+            "queue_job_id": workflow.queue_job_id,
+            "pull_request_id": workflow.pull_request_id,
+            "retry_count": workflow.retry_count,
+            "last_error": workflow.last_error,
+            "started_at": workflow.started_at,
+            "completed_at": workflow.completed_at,
+            "duration_seconds": workflow.duration_seconds,
+            "file_count": analysis.get("file_count"),
+            "detected_languages": analysis.get("languages"),
+            "recommended_next_steps": plan.get("recommended_next_steps"),
+        }
