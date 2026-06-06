@@ -21,3 +21,6 @@ class Patch(Base):
     commit_sha: Mapped[str | None] = mapped_column(String, nullable=True)
     apply_error: Mapped[str | None] = mapped_column(String, nullable=True)
     push_requested: Mapped[bool] = mapped_column(default=False)
+    open_pr_requested: Mapped[bool] = mapped_column(default=False)
+    pr_title: Mapped[str | None] = mapped_column(String, nullable=True)
+    pr_body: Mapped[str | None] = mapped_column(String, nullable=True)

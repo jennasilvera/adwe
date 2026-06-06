@@ -16,3 +16,6 @@ class PatchRead(BaseModel):
     commit_sha: str | None = None
     apply_error: str | None = None
     push_requested: bool = False
+    open_pr_requested: bool = False
+    pr_title: str | None = None
+    pr_body: str | None = None
