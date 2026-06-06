@@ -138,3 +138,21 @@ async def get_workflow_summary(workflow_id: str):
             "detected_languages": analysis.get("languages"),
             "recommended_next_steps": plan.get("recommended_next_steps"),
         }
+
+
+@router.get("/{workflow_id}/artifacts")
+async def get_workflow_artifacts(workflow_id: str):
+    async with AsyncSessionLocal() as session:
+        workflow = await session.get(Workflow, workflow_id)
+
+        if workflow is None:
+            raise HTTPException(status_code=404, detail="Workflow not found")
+
+        return {
+            "workflow_id": workflow.id,
+            "repository_analysis": workflow.repository_analysis,
+            "implementation_plan": workflow.implementation_plan,
+            "code_modification": workflow.code_modification,
+            "pull_request_id": workflow.pull_request_id,
+            "queue_job_id": workflow.queue_job_id,
+        }
