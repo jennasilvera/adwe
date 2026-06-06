@@ -1,6 +1,7 @@
 import logging
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException
+from arq import create_pool
+from fastapi import APIRouter, HTTPException
 from sqlalchemy import select
 
 from adwe.db.session import AsyncSessionLocal
@@ -8,14 +9,19 @@ from adwe.models.workflow import Workflow
 from adwe.models.workflow_schema import WorkflowCreate, WorkflowRead
 from adwe.models.workflow_status import WorkflowStatus
 from adwe.services.audit import record_audit_event
-from adwe.workers.workflow_runner import run_workflow as run_workflow_task
+from adwe.workers.queue import get_redis_settings
 
 router = APIRouter(prefix="/v1/workflows", tags=["workflows"])
 logger = logging.getLogger(__name__)
 
 
+async def enqueue_workflow_run(workflow_id: str) -> None:
+    redis = await create_pool(get_redis_settings())
+    await redis.enqueue_job("run_workflow", workflow_id)
+
+
 @router.post("", response_model=WorkflowRead)
-async def create_workflow(payload: WorkflowCreate, background_tasks: BackgroundTasks):
+async def create_workflow(payload: WorkflowCreate):
     async with AsyncSessionLocal() as session:
         workflow = Workflow(
             repository_url=payload.repository_url,
@@ -35,9 +41,9 @@ async def create_workflow(payload: WorkflowCreate, background_tasks: BackgroundT
         await session.commit()
         await session.refresh(workflow)
 
-        background_tasks.add_task(run_workflow_task, workflow.id)
+    await enqueue_workflow_run(workflow.id)
 
-        return workflow
+    return workflow
 
 
 @router.get("", response_model=list[WorkflowRead])
@@ -52,10 +58,7 @@ async def list_workflows():
 @router.get("/{workflow_id}", response_model=WorkflowRead)
 async def get_workflow(workflow_id: str):
     async with AsyncSessionLocal() as session:
-        result = await session.execute(
-            select(Workflow).where(Workflow.id == workflow_id)
-        )
-        workflow = result.scalar_one_or_none()
+        workflow = await session.get(Workflow, workflow_id)
 
         if workflow is None:
             raise HTTPException(status_code=404, detail="Workflow not found")
@@ -64,7 +67,7 @@ async def get_workflow(workflow_id: str):
 
 
 @router.post("/{workflow_id}/run", response_model=WorkflowRead)
-async def run_workflow_endpoint(workflow_id: str, background_tasks: BackgroundTasks):
+async def run_workflow_endpoint(workflow_id: str):
     async with AsyncSessionLocal() as session:
         workflow = await session.get(Workflow, workflow_id)
 
@@ -75,6 +78,6 @@ async def run_workflow_endpoint(workflow_id: str, background_tasks: BackgroundTa
         await session.commit()
         await session.refresh(workflow)
 
-        background_tasks.add_task(run_workflow_task, workflow.id)
+    await enqueue_workflow_run(workflow_id)
 
-        return workflow
+    return workflow
