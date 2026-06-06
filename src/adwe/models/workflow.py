@@ -25,6 +25,10 @@ class Workflow(Base):
         String,
         nullable=True,
     )
+    pull_request_id: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
+    )
 
     status: Mapped[str] = mapped_column(
         String,

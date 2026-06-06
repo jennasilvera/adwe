@@ -29,7 +29,7 @@ class WorkflowRead(BaseModel):
     status: str
 
     queue_job_id: str | None = None
-
+    pull_request_id: str | None = None
     created_at: datetime
     started_at: datetime | None = None
     completed_at: datetime | None = None
