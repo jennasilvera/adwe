@@ -107,6 +107,8 @@ async def apply_approved_patch(workflow_id: str, patch_id: str):
                 detail="Patch must be approved before it can be applied",
             )
 
+        patch.status = PatchStatus.APPLYING
+
         await record_audit_event(
             session=session,
             workflow_id=workflow_id,
