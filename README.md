@@ -57,3 +57,12 @@ Start the full local stack:
 ```bash
 docker compose up --build
 
+
+## Pre-Push Checklist
+
+Before pushing changes:
+
+```bash
+PYTHONPATH=src uv run pytest
+PYTHONPATH=src uv run alembic upgrade head
+docker compose config
