@@ -74,3 +74,20 @@ async def reject_patch(workflow_id: str, patch_id: str):
         await session.refresh(patch)
 
         return patch
+
+
+@router.get("/{workflow_id}/patches-summary")
+async def get_workflow_patches_summary(workflow_id: str):
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(Patch).where(Patch.workflow_id == workflow_id)
+        )
+        patches = result.scalars().all()
+
+        return {
+            "workflow_id": workflow_id,
+            "total": len(patches),
+            "proposed": sum(1 for patch in patches if patch.status == PatchStatus.PROPOSED),
+            "applied": sum(1 for patch in patches if patch.status == PatchStatus.APPLIED),
+            "rejected": sum(1 for patch in patches if patch.status == PatchStatus.REJECTED),
+        }
