@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 
 from adwe.models.patch_apply_schema import PatchApplyRequest, PatchApplyResponse
+from adwe.services.errors import ADWEError
 from adwe.services.patch_workflow import apply_patch_workflow
 
 router = APIRouter(prefix="/v1/patch-workflows", tags=["patch-workflows"])
@@ -20,8 +21,8 @@ async def apply_patch(payload: PatchApplyRequest):
             pr_title=payload.pr_title,
             pr_body=payload.pr_body,
         )
-    except Exception as exc:
+    except ADWEError as exc:
         raise HTTPException(
             status_code=400,
-            detail=f"Patch workflow failed: {exc}",
+            detail={"code": exc.code, "message": str(exc)},
         ) from exc
