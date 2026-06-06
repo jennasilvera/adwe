@@ -1,5 +1,6 @@
 from adwe.services.git_branch import create_branch
 from adwe.services.git_commit import commit_changes
+from adwe.services.git_push import push_branch
 from adwe.services.github_pr import create_pull_request
 from adwe.services.patch_apply import apply_patch
 from adwe.services.test_runner import run_tests
@@ -14,6 +15,7 @@ def apply_patch_workflow(
     commit_message: str,
     test_command: list[str] | None = None,
     dry_run: bool = False,
+    push: bool = False,
     open_pr: bool = False,
     pr_title: str | None = None,
     pr_body: str | None = None,
@@ -42,6 +44,11 @@ def apply_patch_workflow(
 
         commit_sha = commit_changes(repo_path, commit_message)
 
+        pushed = False
+        if push or open_pr:
+            push_branch(repo_path, branch_name)
+            pushed = True
+
         pull_request = None
         if open_pr:
             pull_request = create_pull_request(
@@ -56,5 +63,6 @@ def apply_patch_workflow(
             "commit_sha": commit_sha,
             "status": "committed",
             "test_result": test_result,
+            "pushed": pushed,
             "pull_request": pull_request,
         }
