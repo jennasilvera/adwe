@@ -1,4 +1,5 @@
 services:
+
   api:
     build: .
     container_name: adwe-api
@@ -28,6 +29,17 @@ services:
     container_name: adwe-redis
     ports:
       - "6379:6379"
+
+  worker:
+    build: .
+    container_name: adwe-worker
+    command: uv run arq adwe.workers.arq_worker.WorkerSettings
+    environment:
+      DATABASE_URL: postgresql+asyncpg://adwe:adwe@postgres:5432/adwe
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      - postgres
+      - redis
 
 volumes:
   postgres_data:

@@ -11,7 +11,7 @@ from adwe.workflows.engine import workflow_graph
 logger = logging.getLogger(__name__)
 
 
-async def run_workflow(workflow_id: str):
+async def run_workflow(ctx, workflow_id: str):
     async with AsyncSessionLocal() as session:
 
         workflow = await session.scalar(
