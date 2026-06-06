@@ -8,6 +8,10 @@ from adwe.services.repository_clone import clone_repository
 from adwe.services.test_runner import run_tests
 
 
+class PatchWorkflowError(Exception):
+    pass
+
+
 def apply_patch_workflow(
     repository_url: str,
     branch_name: str,
@@ -25,6 +29,11 @@ def apply_patch_workflow(
         test_result = None
         if test_command:
             test_result = run_tests(repo_path, test_command)
+
+            if not test_result["passed"]:
+                raise PatchWorkflowError(
+                    f"Tests failed with exit code {test_result['exit_code']}"
+                )
 
         commit_sha = commit_changes(repo_path, commit_message)
 
