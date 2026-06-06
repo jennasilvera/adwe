@@ -8,6 +8,7 @@ from adwe.api.patch_apply import router as patch_apply_router
 from adwe.api.patch_preview import router as patch_preview_router
 from adwe.api.patches import router as patches_router
 from adwe.api.pull_requests import router as pull_requests_router
+from adwe.api.queue import router as queue_router
 from adwe.api.workflows import router as workflows_router
 from adwe.core.logging import configure_logging
 from adwe.db.session import engine
@@ -28,6 +29,7 @@ app.include_router(patches_router)
 app.include_router(patch_apply_router)
 app.include_router(patch_preview_router)
 app.include_router(pull_requests_router)
+app.include_router(queue_router)
 
 Instrumentator().instrument(app).expose(app)
 
