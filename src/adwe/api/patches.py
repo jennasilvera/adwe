@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from sqlalchemy import select
-
+from adwe.models.patch_summary_schema import PatchSummaryRead
 from adwe.db.session import AsyncSessionLocal
 from adwe.models.patch import Patch
 from adwe.models.patch_schema import PatchRead
@@ -76,7 +76,7 @@ async def reject_patch(workflow_id: str, patch_id: str):
         return patch
 
 
-@router.get("/{workflow_id}/patches-summary")
+@router.get("/{workflow_id}/patches-summary", response_model=PatchSummaryRead)
 async def get_workflow_patches_summary(workflow_id: str):
     async with AsyncSessionLocal() as session:
         result = await session.execute(
