@@ -27,11 +27,17 @@ class WorkflowRead(BaseModel):
     id: str
     repository_url: str
     status: str
-    queue_job_id: str | None = None
-    created_at: datetime
 
+    queue_job_id: str | None = None
+
+    created_at: datetime
     started_at: datetime | None = None
     completed_at: datetime | None = None
+
+    duration_seconds: float | None = None
+
+    retry_count: int = 0
+    last_error: str | None = None
 
     repository_analysis: dict[str, Any] | None = None
     implementation_plan: dict[str, Any] | None = None

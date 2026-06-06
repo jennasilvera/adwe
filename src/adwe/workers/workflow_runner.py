@@ -14,8 +14,8 @@ logger = logging.getLogger(__name__)
 
 async def run_workflow(ctx, workflow_id: str):
     await record_heartbeat()
-    async with AsyncSessionLocal() as session:
 
+    async with AsyncSessionLocal() as session:
         workflow = await session.scalar(
             select(Workflow).where(Workflow.id == workflow_id)
         )
@@ -32,28 +32,18 @@ async def run_workflow(ctx, workflow_id: str):
                 {"repository_url": workflow.repository_url}
             )
 
-            workflow.repository_analysis = result.get(
-                "repository_analysis"
-            )
-
-            workflow.implementation_plan = result.get(
-                "implementation_plan"
-            )
-
-            workflow.code_modification = result.get(
-                "code_modification"
-            )
+            workflow.repository_analysis = result.get("repository_analysis")
+            workflow.implementation_plan = result.get("implementation_plan")
+            workflow.code_modification = result.get("code_modification")
 
             workflow.status = WorkflowStatus.COMPLETED
             workflow.completed_at = datetime.utcnow()
 
-        except Exception:
+        except Exception as exc:
+            logger.exception("workflow_failed workflow_id=%s", workflow_id)
 
-            logger.exception(
-                "workflow_failed workflow_id=%s",
-                workflow_id,
-            )
-
+            workflow.retry_count += 1
+            workflow.last_error = str(exc)
             workflow.status = WorkflowStatus.FAILED
             workflow.completed_at = datetime.utcnow()
 

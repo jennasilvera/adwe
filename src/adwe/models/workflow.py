@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import DateTime, String, JSON
+from sqlalchemy import DateTime, JSON, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from adwe.db.base import Base
@@ -30,6 +30,15 @@ class Workflow(Base):
         String,
         nullable=False,
         default="pending",
+    )
+
+    retry_count: Mapped[int] = mapped_column(
+        default=0,
+    )
+
+    last_error: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
     )
 
     repository_analysis: Mapped[dict | None] = mapped_column(
