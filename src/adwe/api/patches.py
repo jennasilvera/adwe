@@ -91,3 +91,30 @@ async def get_workflow_patches_summary(workflow_id: str):
             "applied": sum(1 for patch in patches if patch.status == PatchStatus.APPLIED),
             "rejected": sum(1 for patch in patches if patch.status == PatchStatus.REJECTED),
         }
+
+
+@router.post("/{workflow_id}/patches/{patch_id}/apply", response_model=PatchRead)
+async def apply_approved_patch(workflow_id: str, patch_id: str):
+    async with AsyncSessionLocal() as session:
+        patch = await session.get(Patch, patch_id)
+
+        if patch is None or patch.workflow_id != workflow_id:
+            raise HTTPException(status_code=404, detail="Patch not found")
+
+        if patch.status != PatchStatus.APPLIED:
+            raise HTTPException(
+                status_code=400,
+                detail="Patch must be approved before it can be applied",
+            )
+
+        await record_audit_event(
+            session=session,
+            workflow_id=workflow_id,
+            event_type="patch.apply_requested",
+            payload={"patch_id": patch_id, "file_path": patch.file_path},
+        )
+
+        await session.commit()
+        await session.refresh(patch)
+
+        return patch
