@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 async def run_workflow(ctx, workflow_id: str):
-    record_heartbeat()
+    await record_heartbeat()
     async with AsyncSessionLocal() as session:
 
         workflow = await session.scalar(

@@ -7,4 +7,4 @@ router = APIRouter(prefix="/v1/workers", tags=["workers"])
 
 @router.get("/health")
 async def worker_health():
-    return get_heartbeat()
+    return await get_heartbeat()
