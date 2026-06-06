@@ -6,3 +6,4 @@ class PatchStatus(StrEnum):
     APPLIED = "applied"
     APPLYING = "applying"
     REJECTED = "rejected"
+    FAILED = "failed"

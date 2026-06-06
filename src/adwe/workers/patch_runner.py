@@ -63,7 +63,7 @@ async def apply_patch_job(ctx, patch_id: str):
         except Exception as exc:
             logger.exception("patch_apply_failed patch_id=%s", patch.id)
 
-            patch.status = PatchStatus.APPLIED
+            patch.status = PatchStatus.FAILED
             patch.apply_error = str(exc)
 
             await record_audit_event(

@@ -6,3 +6,4 @@ def test_patch_status_values():
     assert PatchStatus.APPLIED == "applied"
     assert PatchStatus.APPLYING == "applying"
     assert PatchStatus.REJECTED == "rejected"
+    assert PatchStatus.FAILED == "failed"
