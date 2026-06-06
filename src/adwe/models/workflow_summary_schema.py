@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
@@ -15,7 +16,7 @@ class WorkflowSummaryRead(BaseModel):
     completed_at: datetime | None = None
     duration_seconds: float | None = None
     file_count: int | None = None
-    detected_languages: dict | None = None
+    detected_languages: dict[str, Any] | None = None
     recommended_next_steps: list[str] | None = None
 
     model_config = ConfigDict(from_attributes=True)

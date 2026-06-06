@@ -112,7 +112,7 @@ async def get_workflow_pull_request(workflow_id: str):
         return pull_request
 
 
-@router.get("/{workflow_id}/summary")
+@router.get("/{workflow_id}/summary", response_model=WorkflowSummaryRead)
 async def get_workflow_summary(workflow_id: str):
     async with AsyncSessionLocal() as session:
         workflow = await session.get(Workflow, workflow_id)
