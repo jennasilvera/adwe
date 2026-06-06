@@ -12,6 +12,7 @@ class Workflow(Base):
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid4()))
     repository_url: Mapped[str] = mapped_column(String, nullable=False)
+    queue_job_id: Mapped[str | None] = mapped_column(String, nullable=True)
     status: Mapped[str] = mapped_column(String, nullable=False, default="pending")
     repository_analysis: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     implementation_plan: Mapped[dict | None] = mapped_column(JSON, nullable=True)

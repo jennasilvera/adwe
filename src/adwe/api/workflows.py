@@ -15,9 +15,15 @@ router = APIRouter(prefix="/v1/workflows", tags=["workflows"])
 logger = logging.getLogger(__name__)
 
 
-async def enqueue_workflow_run(workflow_id: str) -> None:
+async def enqueue_workflow_run(workflow_id: str) -> str:
     redis = await create_pool(get_redis_settings())
-    await redis.enqueue_job("run_workflow", workflow_id)
+
+    job = await redis.enqueue_job(
+        "run_workflow",
+        workflow_id,
+    )
+
+    return job.job_id
 
 
 @router.post("", response_model=WorkflowRead)
@@ -38,12 +44,13 @@ async def create_workflow(payload: WorkflowCreate):
             payload={"repository_url": payload.repository_url},
         )
 
+        job_id = await enqueue_workflow_run(workflow.id)
+        workflow.queue_job_id = job_id
+
         await session.commit()
         await session.refresh(workflow)
 
-    await enqueue_workflow_run(workflow.id)
-
-    return workflow
+        return workflow
 
 
 @router.get("", response_model=list[WorkflowRead])
@@ -75,9 +82,10 @@ async def run_workflow_endpoint(workflow_id: str):
             raise HTTPException(status_code=404, detail="Workflow not found")
 
         workflow.status = WorkflowStatus.PENDING
+        job_id = await enqueue_workflow_run(workflow_id)
+        workflow.queue_job_id = job_id
+
         await session.commit()
         await session.refresh(workflow)
 
-    await enqueue_workflow_run(workflow_id)
-
-    return workflow
+        return workflow
