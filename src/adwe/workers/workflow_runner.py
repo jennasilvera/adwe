@@ -3,6 +3,7 @@ import logging
 
 from sqlalchemy import select
 
+from adwe.core.constants import MAX_WORKFLOW_RETRIES
 from adwe.db.session import AsyncSessionLocal
 from adwe.models.workflow import Workflow
 from adwe.models.workflow_status import WorkflowStatus
@@ -44,7 +45,20 @@ async def run_workflow(ctx, workflow_id: str):
 
             workflow.retry_count += 1
             workflow.last_error = str(exc)
-            workflow.status = WorkflowStatus.FAILED
             workflow.completed_at = datetime.utcnow()
+
+            if workflow.retry_count < MAX_WORKFLOW_RETRIES:
+                workflow.status = WorkflowStatus.PENDING
+                await session.commit()
+
+                await ctx["redis"].enqueue_job(
+                    "run_workflow",
+                    workflow.id,
+                    _defer_by=workflow.retry_count * 30,
+                )
+
+                return
+
+            workflow.status = WorkflowStatus.FAILED
 
         await session.commit()
