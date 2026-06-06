@@ -16,6 +16,9 @@ async def apply_patch(payload: PatchApplyRequest):
             commit_message=payload.commit_message,
             test_command=payload.test_command,
             dry_run=payload.dry_run,
+            open_pr=payload.open_pr,
+            pr_title=payload.pr_title,
+            pr_body=payload.pr_body,
         )
     except Exception as exc:
         raise HTTPException(
