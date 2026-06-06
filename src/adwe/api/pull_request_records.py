@@ -15,3 +15,14 @@ async def list_pull_request_records():
             select(PullRequest).order_by(PullRequest.created_at.desc())
         )
         return result.scalars().all()
+
+
+@router.get("/workflows/{workflow_id}", response_model=list[PullRequestRecordRead])
+async def list_workflow_pull_request_records(workflow_id: str):
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(PullRequest)
+            .where(PullRequest.workflow_id == workflow_id)
+            .order_by(PullRequest.created_at.desc())
+        )
+        return result.scalars().all()
