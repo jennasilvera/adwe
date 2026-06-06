@@ -1,13 +1,10 @@
-import tempfile
-from pathlib import Path
-
 from adwe.services.git_branch import create_branch
 from adwe.services.git_commit import commit_changes
 from adwe.services.github_pr import create_pull_request
 from adwe.services.patch_apply import apply_patch
-from adwe.services.repository_clone import clone_repository
 from adwe.services.test_runner import run_tests
-from adwe.services.errors import PatchApplyWorkflowError, TestExecutionError
+from adwe.services.workspace import repository_workspace
+from adwe.services.errors import TestExecutionError
 
 
 def apply_patch_workflow(
@@ -21,10 +18,7 @@ def apply_patch_workflow(
     pr_title: str | None = None,
     pr_body: str | None = None,
 ) -> dict:
-    with tempfile.TemporaryDirectory() as tmpdir:
-        repo_path = Path(tmpdir) / "repo"
-
-        clone_repository(repository_url, repo_path)
+    with repository_workspace(repository_url) as repo_path:
         create_branch(repo_path, branch_name)
         apply_patch(repo_path, diff)
 
@@ -43,6 +37,7 @@ def apply_patch_workflow(
                 "commit_sha": None,
                 "status": "validated",
                 "test_result": test_result,
+                "pull_request": None,
             }
 
         commit_sha = commit_changes(repo_path, commit_message)
