@@ -1,11 +1,19 @@
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 
 
 class WorkflowCreate(BaseModel):
     repository_url: str
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "repository_url": "https://github.com/pallets/flask"
+            }
+        }
+    )
 
     @field_validator("repository_url")
     @classmethod
@@ -24,4 +32,4 @@ class WorkflowRead(BaseModel):
     implementation_plan: dict[str, Any] | None = None
     code_modification: dict[str, Any] | None = None
 
-    model_config = {"from_attributes": True}
+    model_config = ConfigDict(from_attributes=True)

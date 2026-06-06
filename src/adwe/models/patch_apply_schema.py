@@ -1,6 +1,6 @@
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class PatchApplyRequest(BaseModel):
@@ -13,6 +13,20 @@ class PatchApplyRequest(BaseModel):
     open_pr: bool = False
     pr_title: str | None = None
     pr_body: str | None = None
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "repository_url": "https://github.com/pallets/flask",
+                "branch_name": "adwe/update-readme",
+                "diff": "diff --git a/README.md b/README.md\\n--- a/README.md\\n+++ b/README.md\\n@@ -1 +1,2 @@\\n hello\\n+world\\n",
+                "commit_message": "Update README with ADWE patch",
+                "test_command": ["python", "-m", "pytest"],
+                "dry_run": True,
+                "open_pr": False
+            }
+        }
+    )
 
 
 class PatchApplyResponse(BaseModel):
