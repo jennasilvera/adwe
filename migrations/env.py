@@ -20,6 +20,7 @@ if config.config_file_name is not None:
 # target_metadata = mymodel.Base.metadata
 from adwe.db.base import Base
 from adwe.models.workflow import Workflow
+from adwe.models.pull_request import PullRequest
 from adwe.models.audit_event import AuditEvent
 from adwe.models.patch import Patch
 
