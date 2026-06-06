@@ -25,6 +25,7 @@ async def open_pull_request(payload: PullRequestCreate):
             title=result["title"],
             url=result.get("url"),
             status=result["status"],
+            workflow_id=payload.workflow_id,
         )
 
         await session.commit()

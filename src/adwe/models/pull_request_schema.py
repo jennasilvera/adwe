@@ -6,6 +6,7 @@ class PullRequestCreate(BaseModel):
     branch_name: str
     title: str
     body: str
+    workflow_id: str | None = None
 
 
 class PullRequestRead(BaseModel):
