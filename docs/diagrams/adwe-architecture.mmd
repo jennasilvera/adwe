@@ -1,0 +1,31 @@
+flowchart TD
+
+    Client[Client / CLI / API Consumer]
+
+    Client --> API[FastAPI API]
+
+    API --> Workflow[Workflow Service]
+
+    Workflow --> DB[(PostgreSQL)]
+
+    Workflow --> Queue[ARQ Queue]
+
+    Queue --> Worker[Worker]
+
+    Worker --> LangGraph[LangGraph Engine]
+
+    LangGraph --> Analysis[Repository Analysis]
+
+    LangGraph --> Planning[Implementation Planning]
+
+    LangGraph --> Patch[Code Modification]
+
+    Patch --> GitHub[GitHub Branch / PR]
+
+    Worker --> Audit[Audit Events]
+
+    Audit --> DB
+
+    GitHub --> PR[Pull Request Records]
+
+    PR --> DB
