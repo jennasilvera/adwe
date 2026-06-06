@@ -7,11 +7,13 @@ from adwe.db.session import AsyncSessionLocal
 from adwe.models.workflow import Workflow
 from adwe.models.workflow_status import WorkflowStatus
 from adwe.workflows.engine import workflow_graph
+from adwe.workers.heartbeat import record_heartbeat
 
 logger = logging.getLogger(__name__)
 
 
 async def run_workflow(ctx, workflow_id: str):
+    record_heartbeat()
     async with AsyncSessionLocal() as session:
 
         workflow = await session.scalar(
