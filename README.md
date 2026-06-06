@@ -1,4 +1,3 @@
-
 ## Local Development
 
 Start infrastructure and API:
@@ -8,15 +7,15 @@ docker compose up --build
 curl http://localhost:8000/v1/health
 curl -X POST http://localhost:8000/v1/workflows \
   -H "Content-Type: application/json" \
-  -d '{"repository_url":"https://github.com/jennasilvera/adwe"}'
-curl -X POST http://localhost:8000/v1/workflows/<workflow_id>/run
+  -d '{"repository_url":"https://github.com/pallets/flask"}'
 curl http://localhost:8000/v1/workflows
 curl http://localhost:8000/metrics
-cat >> README.md <<'EOF'
 
-## Local Development
+## GitHub Authentication
 
-Start infrastructure and API:
+For private repositories, create a GitHub Personal Access Token.
 
-```bash
-docker compose up --build
+Create a local `.env` file:
+
+```env
+GITHUB_TOKEN=your_token_here
