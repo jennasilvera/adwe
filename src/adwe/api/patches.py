@@ -102,7 +102,12 @@ async def get_workflow_patches_summary(workflow_id: str):
 
 
 @router.post("/{workflow_id}/patches/{patch_id}/apply", response_model=PatchRead)
-async def apply_approved_patch(workflow_id: str, patch_id: str, push: bool = False):
+async def apply_approved_patch(
+    workflow_id: str,
+    patch_id: str,
+    push: bool = False,
+    open_pr: bool = False,
+):
     async with AsyncSessionLocal() as session:
         patch = await session.get(Patch, patch_id)
 
@@ -115,6 +120,7 @@ async def apply_approved_patch(workflow_id: str, patch_id: str, push: bool = Fal
                 detail="Patch must be approved before it can be applied",
             )
         patch.push_requested = push
+        patch.open_pr_requested = open_pr
         patch.status = PatchStatus.APPLYING
 
         job_id = await enqueue_patch_apply(patch_id)

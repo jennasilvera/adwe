@@ -43,6 +43,9 @@ async def apply_patch_job(ctx, patch_id: str):
                 commit_message=f"Apply ADWE patch for workflow {workflow.id}",
                 dry_run=False,
                 push=patch.push_requested,
+                open_pr=patch.open_pr_requested,
+                pr_title=patch.pr_title,
+                pr_body=patch.pr_body,
              )
 
             patch.branch_name = result.get("branch_name")
