@@ -4,6 +4,8 @@ from pathlib import Path
 
 from git import Repo
 
+from adwe.core.config import settings
+
 from adwe.workflows.state import WorkflowState
 
 IGNORED_DIRS = {".git", ".venv", "__pycache__", "node_modules", ".pytest_cache", "dist", "build"}
@@ -29,7 +31,15 @@ def analyze_repository(state: WorkflowState):
 
     with tempfile.TemporaryDirectory() as tmpdir:
         repo_path = Path(tmpdir) / "repo"
-        Repo.clone_from(repository_url, repo_path)
+        clone_url = repository_url
+        if settings.github_token and repository_url.startswith("https://github.com/"):
+            clone_url = repository_url.replace(
+                "https://github.com/",
+                f"https://{settings.github_token}@github.com/",
+                1,
+            )
+
+        Repo.clone_from(clone_url, repo_path)
 
         files = [
             path
