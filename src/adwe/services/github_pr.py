@@ -45,7 +45,7 @@ def create_pull_request(
         json={
             "title": title,
             "head": branch_name,
-            "base": "main",
+            "base": "master",
             "body": body,
         },
         timeout=30,

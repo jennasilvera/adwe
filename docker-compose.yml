@@ -8,6 +8,7 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://adwe:adwe@postgres:5432/adwe
       REDIS_URL: redis://redis:6379/0
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
     depends_on:
       - postgres
       - redis
@@ -37,6 +38,7 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://adwe:adwe@postgres:5432/adwe
       REDIS_URL: redis://redis:6379/0
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
     depends_on:
       - postgres
       - redis

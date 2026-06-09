@@ -35,7 +35,7 @@ def analyze_repository(state: WorkflowState):
         if settings.github_token and repository_url.startswith("https://github.com/"):
             clone_url = repository_url.replace(
                 "https://github.com/",
-                f"https://{settings.github_token}@github.com/",
+                f"https://x-access-token:{settings.github_token}@github.com/",
                 1,
             )
 

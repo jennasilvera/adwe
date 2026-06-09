@@ -6,6 +6,7 @@ from adwe.models.patch_status import PatchStatus
 from adwe.models.workflow import Workflow
 from adwe.services.audit import record_audit_event
 from adwe.services.patch_workflow import apply_patch_workflow
+from adwe.services.pull_request_records import record_pull_request
 
 logger = logging.getLogger(__name__)
 
@@ -46,11 +47,27 @@ async def apply_patch_job(ctx, patch_id: str):
                 open_pr=patch.open_pr_requested,
                 pr_title=patch.pr_title,
                 pr_body=patch.pr_body,
-             )
+            )
 
             patch.branch_name = result.get("branch_name")
             patch.commit_sha = result.get("commit_sha")
             patch.status = PatchStatus.APPLIED
+
+            pull_request = result.get("pull_request")
+
+            if pull_request:
+                record = await record_pull_request(
+                    session=session,
+                    repository_url=pull_request["repository_url"],
+                    branch_name=pull_request["branch_name"],
+                    title=pull_request["title"],
+                    status=pull_request["status"],
+                    url=pull_request.get("url"),
+                    workflow_id=workflow.id,
+                )
+
+                await session.flush()
+                workflow.pull_request_id = record.id
 
             await record_audit_event(
                 session=session,
@@ -61,6 +78,7 @@ async def apply_patch_job(ctx, patch_id: str):
                     "file_path": patch.file_path,
                     "branch_name": patch.branch_name,
                     "commit_sha": patch.commit_sha,
+                    "pull_request": pull_request,
                 },
             )
 
