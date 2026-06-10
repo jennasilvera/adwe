@@ -61,37 +61,41 @@ async def run_workflow(ctx, workflow_id: str):
                 },
             )
 
-            code_modification = result.get("code_modification") or {}
+            code_modifications = result.get("code_modifications") or []
 
-            await record_audit_event(
-                session=session,
-                workflow_id=workflow.id,
-                event_type="agent.patch_proposed",
-                payload={
-                    "summary": code_modification.get("summary"),
-                    "target_file": code_modification.get("target_file"),
-                },
-            )
+            if not code_modifications:
+                code_modifications = [result.get("code_modification") or {}]
 
-            diff = code_modification.get("patch") or code_modification.get("diff")
-
-            if diff:
-                target_file = code_modification.get("target_file", "README.md")
-
-                session.add(
-                    Patch(
-                        workflow_id=workflow.id,
-                        file_path=target_file,
-                        diff=diff,
-                        status=PatchStatus.PROPOSED,
-                        summary=code_modification.get("summary"),
-                        files_changed=[target_file],
-                        reasoning=(
-                            "Selected from repository analysis and "
-                            "implementation plan."
-                        ),
-                    )
+            for code_modification in code_modifications:
+                await record_audit_event(
+                    session=session,
+                    workflow_id=workflow.id,
+                    event_type="agent.patch_proposed",
+                    payload={
+                        "summary": code_modification.get("summary"),
+                        "target_file": code_modification.get("target_file"),
+                    },
                 )
+
+                diff = code_modification.get("patch") or code_modification.get("diff")
+
+                if diff:
+                    target_file = code_modification.get("target_file", "README.md")
+
+                    session.add(
+                        Patch(
+                            workflow_id=workflow.id,
+                            file_path=target_file,
+                            diff=diff,
+                            status=PatchStatus.PROPOSED,
+                            summary=code_modification.get("summary"),
+                            files_changed=[target_file],
+                            reasoning=(
+                                "Selected from repository analysis and "
+                                "implementation plan."
+                            ),
+                        )
+                    )
 
             workflow.status = WorkflowStatus.COMPLETED
             workflow.completed_at = datetime.utcnow()
