@@ -19,6 +19,11 @@ def _new_file_patch(path: str, content: str) -> str:
 def _select_patch_target(analysis: dict, plan: dict) -> tuple[str, str]:
     tools = analysis.get("detected_tools", {})
     steps = plan.get("recommended_next_steps", [])
+    candidate_targets = plan.get("candidate_targets", [])
+
+    if candidate_targets:
+        target = candidate_targets[0]
+        return target, f"Generated implementation artifact for {target}."
 
     if tools.get("alembic") and any("migration validation" in step.lower() for step in steps):
         return "docs/adwe-migration-validation.md", "Generated migration validation documentation."
