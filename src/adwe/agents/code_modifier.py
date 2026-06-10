@@ -16,6 +16,11 @@ def _new_file_patch(path: str, content: str) -> str:
     )
 
 
+def _default_candidate_targets(analysis: dict, plan: dict) -> list[str]:
+    target_file, _ = _select_patch_target(analysis, plan)
+    return [target_file]
+
+
 def _select_patch_target(analysis: dict, plan: dict) -> tuple[str, str]:
     tools = analysis.get("detected_tools", {})
     steps = plan.get("recommended_next_steps", [])
@@ -84,24 +89,38 @@ def _analysis_markdown(analysis: dict, plan: dict, target_file: str) -> str:
     return "\n".join(lines) + "\n"
 
 
-def modify_code(state: WorkflowState):
-    analysis = state["repository_analysis"]
-    plan = state["implementation_plan"]
-
-    target_file, summary = _select_patch_target(analysis, plan)
+def _build_modification(analysis: dict, plan: dict, target_file: str) -> dict:
     content = _analysis_markdown(analysis, plan, target_file)
     patch = _new_file_patch(target_file, content)
 
     return {
-        "code_modification": {
-            "status": "proposed",
-            "summary": summary,
-            "patch": patch,
-            "target_file": target_file,
-            "based_on": {
-                "file_count": analysis.get("file_count"),
-                "detected_tools": analysis.get("detected_tools", {}),
-                "recommended_steps": plan.get("recommended_next_steps", []),
-            },
-        }
+        "status": "proposed",
+        "summary": f"Generated implementation artifact for {target_file}.",
+        "patch": patch,
+        "target_file": target_file,
+        "based_on": {
+            "file_count": analysis.get("file_count"),
+            "detected_tools": analysis.get("detected_tools", {}),
+            "recommended_steps": plan.get("recommended_next_steps", []),
+        },
+    }
+
+
+def modify_code(state: WorkflowState):
+    analysis = state["repository_analysis"]
+    plan = state["implementation_plan"]
+
+    candidate_targets = plan.get("candidate_targets") or _default_candidate_targets(
+        analysis,
+        plan,
+    )
+
+    code_modifications = [
+        _build_modification(analysis, plan, target)
+        for target in candidate_targets[:3]
+    ]
+
+    return {
+        "code_modification": code_modifications[0],
+        "code_modifications": code_modifications,
     }
