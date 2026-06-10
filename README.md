@@ -212,7 +212,7 @@ workflow linked to pull request
 
 Example pull request: 
 
-https://github.com/jennasilvera/adwe/pull/2
+Latest successful PR: https://github.com/jennasilvera/adwe/pull/3
 
 ## GitHub Authentication
 
