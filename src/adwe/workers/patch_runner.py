@@ -42,6 +42,7 @@ async def apply_patch_job(ctx, patch_id: str):
                 branch_name=f"adwe/{workflow.id}",
                 diff=patch.diff,
                 commit_message=f"Apply ADWE patch for workflow {workflow.id}",
+                test_command=["python", "-m", "pytest"],
                 dry_run=False,
                 push=patch.push_requested,
                 open_pr=patch.open_pr_requested,
@@ -78,6 +79,7 @@ async def apply_patch_job(ctx, patch_id: str):
                     "file_path": patch.file_path,
                     "branch_name": patch.branch_name,
                     "commit_sha": patch.commit_sha,
+                    "test_result": result.get("test_result"),
                     "pull_request": pull_request,
                 },
             )
