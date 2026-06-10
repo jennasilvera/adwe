@@ -173,6 +173,26 @@ curl http://localhost:8000/v1/workflow-metrics
 curl http://localhost:8000/v1/queue-metrics
 ```
 
+### Successful PR Demo
+
+ADWE successfully executed the full workflow:
+
+```text
+workflow created
+patch generated
+patch approved
+patch applied
+branch pushed
+pull request opened
+pull request persisted
+workflow linked to pull request
+
+```
+
+Example pull request: 
+
+https://github.com/jennasilvera/adwe/pull/2
+
 ## GitHub Authentication
 
 For private repositories create a GitHub Personal Access Token.
