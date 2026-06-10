@@ -19,3 +19,6 @@ class PatchRead(BaseModel):
     open_pr_requested: bool = False
     pr_title: str | None = None
     pr_body: str | None = None
+    summary: str | None = None
+    files_changed: list[str] | None = None
+    reasoning: str | None = None

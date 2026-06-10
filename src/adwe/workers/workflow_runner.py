@@ -1,21 +1,3 @@
-from datetime import datetime
-import logging
-
-from sqlalchemy import select
-
-from adwe.core.constants import MAX_WORKFLOW_RETRIES
-from adwe.db.session import AsyncSessionLocal
-from adwe.models.patch import Patch
-from adwe.models.patch_status import PatchStatus
-from adwe.models.workflow import Workflow
-from adwe.models.workflow_status import WorkflowStatus
-from adwe.services.audit import record_audit_event
-from adwe.workflows.engine import workflow_graph
-from adwe.workers.heartbeat import record_heartbeat
-
-logger = logging.getLogger(__name__)
-
-
 async def run_workflow(ctx, workflow_id: str):
     await record_heartbeat()
 
@@ -36,16 +18,25 @@ async def run_workflow(ctx, workflow_id: str):
                 {"repository_url": workflow.repository_url}
             )
 
-            workflow.repository_analysis = result.get("repository_analysis")
-            workflow.implementation_plan = result.get("implementation_plan")
-            workflow.code_modification = result.get("code_modification")
+            workflow.repository_analysis = result.get(
+                "repository_analysis"
+            )
+            workflow.implementation_plan = result.get(
+                "implementation_plan"
+            )
+            workflow.code_modification = result.get(
+                "code_modification"
+            )
 
             await record_audit_event(
                 session=session,
                 workflow_id=workflow.id,
                 event_type="agent.repository_analyzed",
                 payload={
-                    "file_count": result.get("repository_analysis", {}).get("file_count"),
+                    "file_count": result.get(
+                        "repository_analysis",
+                        {},
+                    ).get("file_count"),
                 },
             )
 
@@ -54,34 +45,68 @@ async def run_workflow(ctx, workflow_id: str):
                 workflow_id=workflow.id,
                 event_type="agent.plan_created",
                 payload={
-                    "recommended_steps": result.get("implementation_plan", {}).get(
+                    "recommended_steps": result.get(
+                        "implementation_plan",
+                        {},
+                    ).get(
                         "recommended_next_steps",
                         [],
                     ),
                 },
             )
 
-            code_modification = result.get("code_modification") or {}
+            code_modification = (
+                result.get("code_modification") or {}
+            )
 
             await record_audit_event(
                 session=session,
                 workflow_id=workflow.id,
                 event_type="agent.patch_proposed",
                 payload={
-                    "summary": code_modification.get("summary"),
-                    "target_file": code_modification.get("target_file"),
+                    "summary": code_modification.get(
+                        "summary"
+                    ),
+                    "target_file": code_modification.get(
+                        "target_file"
+                    ),
                 },
             )
 
-            diff = code_modification.get("patch") or code_modification.get("diff")
+            diff = (
+                code_modification.get("patch")
+                or code_modification.get("diff")
+            )
 
             if diff:
                 session.add(
                     Patch(
                         workflow_id=workflow.id,
-                        file_path=code_modification.get("target_file", "README.md"),
+                        file_path=code_modification.get(
+                            "target_file",
+                            "README.md",
+                        ),
                         diff=diff,
                         status=PatchStatus.PROPOSED,
+                        summary=code_modification.get(
+                            "summary"
+                        ),
+                        files_changed=(
+                            [
+                                code_modification.get(
+                                    "target_file"
+                                )
+                            ]
+                            if code_modification.get(
+                                "target_file"
+                            )
+                            else None
+                        ),
+                        reasoning=(
+                            "Selected from repository "
+                            "analysis and implementation "
+                            "plan."
+                        ),
                     )
                 )
 
@@ -89,7 +114,10 @@ async def run_workflow(ctx, workflow_id: str):
             workflow.completed_at = datetime.utcnow()
 
         except Exception as exc:
-            logger.exception("workflow_failed workflow_id=%s", workflow_id)
+            logger.exception(
+                "workflow_failed workflow_id=%s",
+                workflow_id,
+            )
 
             workflow.retry_count += 1
             workflow.last_error = str(exc)
@@ -97,6 +125,7 @@ async def run_workflow(ctx, workflow_id: str):
 
             if workflow.retry_count < MAX_WORKFLOW_RETRIES:
                 workflow.status = WorkflowStatus.PENDING
+
                 await session.commit()
 
                 await ctx["redis"].enqueue_job(

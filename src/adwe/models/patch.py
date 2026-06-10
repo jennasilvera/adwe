@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import DateTime, String
+from sqlalchemy import DateTime, JSON, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from adwe.db.base import Base
@@ -24,3 +24,6 @@ class Patch(Base):
     open_pr_requested: Mapped[bool] = mapped_column(default=False)
     pr_title: Mapped[str | None] = mapped_column(String, nullable=True)
     pr_body: Mapped[str | None] = mapped_column(String, nullable=True)
+    summary: Mapped[str | None] = mapped_column(String, nullable=True)
+    files_changed: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
+    reasoning: Mapped[str | None] = mapped_column(String, nullable=True)
