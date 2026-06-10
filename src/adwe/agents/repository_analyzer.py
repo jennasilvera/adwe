@@ -5,14 +5,24 @@ from pathlib import Path
 from git import Repo
 
 from adwe.core.config import settings
-
 from adwe.workflows.state import WorkflowState
 
-IGNORED_DIRS = {".git", ".venv", "__pycache__", "node_modules", ".pytest_cache", "dist", "build"}
+IGNORED_DIRS = {
+    ".git",
+    ".venv",
+    "__pycache__",
+    "node_modules",
+    ".pytest_cache",
+    "dist",
+    "build",
+    ".mypy_cache",
+    ".ruff_cache",
+}
 
 LANGUAGE_BY_EXT = {
     ".py": "Python",
     ".js": "JavaScript",
+    ".jsx": "JavaScript",
     ".ts": "TypeScript",
     ".tsx": "TypeScript",
     ".go": "Go",
@@ -23,7 +33,47 @@ LANGUAGE_BY_EXT = {
     ".yaml": "YAML",
     ".toml": "TOML",
     ".md": "Markdown",
+    ".sql": "SQL",
+    ".sh": "Shell",
 }
+
+
+def _clone_url(repository_url: str) -> str:
+    if settings.github_token and repository_url.startswith("https://github.com/"):
+        return repository_url.replace(
+            "https://github.com/",
+            f"https://x-access-token:{settings.github_token}@github.com/",
+            1,
+        )
+
+    return repository_url
+
+
+def _is_ignored(path: Path) -> bool:
+    return any(part in IGNORED_DIRS for part in path.parts)
+
+
+def _relative(path: Path, repo_path: Path) -> str:
+    return str(path.relative_to(repo_path))
+
+
+def _detect_frameworks(files: list[Path], repo_path: Path) -> dict[str, bool]:
+    relative_files = {_relative(path, repo_path) for path in files}
+    file_names = {path.name for path in files}
+
+    pyproject = next((path for path in files if path.name == "pyproject.toml"), None)
+    pyproject_text = pyproject.read_text(errors="ignore").lower() if pyproject else ""
+
+    return {
+        "fastapi": "fastapi" in pyproject_text,
+        "django": "django" in pyproject_text or "manage.py" in file_names,
+        "flask": "flask" in pyproject_text,
+        "sqlalchemy": "sqlalchemy" in pyproject_text,
+        "alembic": any("migrations" in path.parts for path in files),
+        "docker": "Dockerfile" in file_names or "docker-compose.yml" in file_names,
+        "github_actions": any(path.startswith(".github/workflows/") for path in relative_files),
+        "pytest": any(path.name.startswith("test_") and path.suffix == ".py" for path in files),
+    }
 
 
 def analyze_repository(state: WorkflowState):
@@ -31,24 +81,15 @@ def analyze_repository(state: WorkflowState):
 
     with tempfile.TemporaryDirectory() as tmpdir:
         repo_path = Path(tmpdir) / "repo"
-        clone_url = repository_url
-        if settings.github_token and repository_url.startswith("https://github.com/"):
-            clone_url = repository_url.replace(
-                "https://github.com/",
-                f"https://x-access-token:{settings.github_token}@github.com/",
-                1,
-            )
-
-        Repo.clone_from(clone_url, repo_path)
+        Repo.clone_from(_clone_url(repository_url), repo_path)
 
         files = [
             path
             for path in repo_path.rglob("*")
-            if path.is_file()
-            and not any(part in IGNORED_DIRS for part in path.parts)
+            if path.is_file() and not _is_ignored(path)
         ]
 
-        relative_files = [str(path.relative_to(repo_path)) for path in files]
+        relative_files = [_relative(path, repo_path) for path in files]
 
         languages = Counter(
             LANGUAGE_BY_EXT.get(path.suffix, "Other")
@@ -56,39 +97,51 @@ def analyze_repository(state: WorkflowState):
         )
 
         api_routes = [
-            str(path.relative_to(repo_path))
+            _relative(path, repo_path)
             for path in files
             if "api" in path.parts and path.suffix == ".py"
         ]
 
         database_models = [
-            str(path.relative_to(repo_path))
+            _relative(path, repo_path)
             for path in files
             if "models" in path.parts and path.suffix == ".py"
         ]
 
         entrypoints = [
-            str(path.relative_to(repo_path))
+            _relative(path, repo_path)
             for path in files
-            if path.name in {"main.py", "app.py", "server.py"}
+            if path.name in {"main.py", "app.py", "server.py", "asgi.py", "wsgi.py"}
         ]
 
-        migration_count = len([
-            path for path in files
+        migration_files = [
+            _relative(path, repo_path)
+            for path in files
             if "migrations" in path.parts and path.suffix == ".py"
-        ])
+        ]
 
-        test_count = len([
-            path for path in files
+        test_files = [
+            _relative(path, repo_path)
+            for path in files
             if path.name.startswith("test_") and path.suffix == ".py"
-        ])
+        ]
 
-        detected_tools = {
-            "docker": any(path.name in {"Dockerfile", "docker-compose.yml"} for path in files),
-            "python_project": any(path.name == "pyproject.toml" for path in files),
-            "github_actions": any(".github/workflows" in str(path.relative_to(repo_path)) for path in files),
-            "alembic": any("migrations" in path.parts for path in files),
-        }
+        config_files = [
+            _relative(path, repo_path)
+            for path in files
+            if path.name
+            in {
+                "pyproject.toml",
+                "requirements.txt",
+                "Dockerfile",
+                "docker-compose.yml",
+                "alembic.ini",
+                ".env.example",
+                "Makefile",
+            }
+        ]
+
+        detected_tools = _detect_frameworks(files, repo_path)
 
     return {
         "repository_analysis": {
@@ -99,8 +152,11 @@ def analyze_repository(state: WorkflowState):
             "entrypoints": entrypoints,
             "api_routes": api_routes,
             "database_models": database_models,
-            "migration_count": migration_count,
-            "test_count": test_count,
-            "sample_files": relative_files[:30],
+            "migration_count": len(migration_files),
+            "migration_files": migration_files[:20],
+            "test_count": len(test_files),
+            "test_files": test_files[:20],
+            "config_files": config_files,
+            "sample_files": relative_files[:50],
         }
     }
