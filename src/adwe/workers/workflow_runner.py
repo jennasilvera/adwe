@@ -1,8 +1,10 @@
 from datetime import datetime
+
 import logging
 
 from sqlalchemy import select
 
+from adwe.services.audit import record_audit_event
 from adwe.core.constants import MAX_WORKFLOW_RETRIES
 from adwe.db.session import AsyncSessionLocal
 from adwe.models.patch import Patch
@@ -30,7 +32,7 @@ async def run_workflow(ctx, workflow_id: str):
         workflow.started_at = datetime.utcnow()
         await session.commit()
 
-        try:
+         try:
             result = workflow_graph.invoke(
                 {"repository_url": workflow.repository_url}
             )
@@ -39,14 +41,46 @@ async def run_workflow(ctx, workflow_id: str):
             workflow.implementation_plan = result.get("implementation_plan")
             workflow.code_modification = result.get("code_modification")
 
+            await record_audit_event(
+                session=session,
+                workflow_id=workflow.id,
+                event_type="agent.repository_analyzed",
+                payload={
+                    "file_count": result.get("repository_analysis", {}).get("file_count"),
+                },
+            )
+
+            await record_audit_event(
+                session=session,
+                workflow_id=workflow.id,
+                event_type="agent.plan_created",
+                payload={
+                    "recommended_steps": result.get("implementation_plan", {}).get(
+                        "recommended_next_steps",
+                        [],
+                    ),
+                },
+            )
+
             code_modification = result.get("code_modification") or {}
+
+            await record_audit_event(
+                session=session,
+                workflow_id=workflow.id,
+                event_type="agent.patch_proposed",
+                payload={
+                    "summary": code_modification.get("summary"),
+                    "target_file": code_modification.get("target_file"),
+                },
+            )
+
             diff = code_modification.get("patch") or code_modification.get("diff")
 
             if diff:
                 session.add(
                     Patch(
                         workflow_id=workflow.id,
-                        file_path="README.md",
+                        file_path=code_modification.get("target_file", "README.md"),
                         diff=diff,
                         status=PatchStatus.PROPOSED,
                     )
