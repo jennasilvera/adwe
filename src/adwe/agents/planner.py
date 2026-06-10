@@ -4,6 +4,28 @@ from adwe.services.llm import LLMError, generate_text, llm_available
 from adwe.workflows.state import WorkflowState
 
 
+def _candidate_targets(analysis: dict, recommended_steps: list[str]) -> list[str]:
+    tools = analysis.get("detected_tools", {})
+    targets: list[str] = []
+
+    if tools.get("alembic") and any("migration validation" in step.lower() for step in recommended_steps):
+        targets.append("docs/adwe-migration-validation.md")
+
+    if tools.get("docker") and any("health checks" in step.lower() for step in recommended_steps):
+        targets.append("docs/adwe-docker-healthchecks.md")
+
+    if tools.get("fastapi") and analysis.get("api_routes"):
+        targets.append("docs/adwe-api-surface.md")
+
+    if tools.get("github_actions"):
+        targets.append(".github/workflows/ci.yml")
+
+    if not targets:
+        targets.append("ADWE_ANALYSIS.md")
+
+    return targets
+
+
 def _rule_based_plan(analysis: dict) -> dict:
     tools = analysis.get("detected_tools", {})
     languages = analysis.get("languages", {})
@@ -51,6 +73,8 @@ def _rule_based_plan(analysis: dict) -> dict:
     recommended_steps.append("Add structured audit events for every agent transition.")
     recommended_steps.append("Add workflow-level artifact summaries for recruiter-friendly demos.")
 
+    candidate_targets = _candidate_targets(analysis, recommended_steps)
+
     return {
         "summary": "Generated structured implementation plan from repository architecture analysis.",
         "detected_languages": languages,
@@ -65,6 +89,7 @@ def _rule_based_plan(analysis: dict) -> dict:
         "strengths": strengths,
         "risks": risks,
         "recommended_next_steps": recommended_steps,
+        "candidate_targets": candidate_targets,
         "planner": "rule_based",
         "planner_trace": {
             "mode": "rule_based",
@@ -79,7 +104,8 @@ def _build_llm_prompt(analysis: dict) -> str:
     return (
         "You are a senior engineering-platform architect. "
         "Given this repository analysis, return a concise JSON implementation plan "
-        "with keys: summary, strengths, risks, recommended_next_steps. "
+        "with keys: summary, strengths, risks, recommended_next_steps, candidate_targets. "
+        "candidate_targets should be repository files that could be modified or created. "
         "Do not include markdown.\n\n"
         f"{json.dumps(analysis, indent=2)}"
     )
@@ -99,6 +125,10 @@ def _llm_plan(analysis: dict) -> dict:
             "recommended_next_steps": parsed.get(
                 "recommended_next_steps",
                 fallback["recommended_next_steps"],
+            ),
+            "candidate_targets": parsed.get(
+                "candidate_targets",
+                fallback["candidate_targets"],
             ),
             "planner": "llm",
             "planner_trace": {
