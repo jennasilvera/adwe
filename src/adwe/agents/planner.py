@@ -1,9 +1,10 @@
+import json
+
+from adwe.services.llm import LLMError, generate_text, llm_available
 from adwe.workflows.state import WorkflowState
 
 
-def create_plan(state: WorkflowState):
-    analysis = state["repository_analysis"]
-
+def _rule_based_plan(analysis: dict) -> dict:
     tools = analysis.get("detected_tools", {})
     languages = analysis.get("languages", {})
     api_routes = analysis.get("api_routes", [])
@@ -18,25 +19,19 @@ def create_plan(state: WorkflowState):
 
     if tools.get("fastapi"):
         strengths.append("FastAPI API layer detected.")
-
     if tools.get("sqlalchemy"):
         strengths.append("SQLAlchemy persistence layer detected.")
-
     if tools.get("alembic"):
         strengths.append("Alembic migration system detected.")
-
     if tools.get("docker"):
         strengths.append("Docker-based local development detected.")
-
     if tools.get("github_actions"):
         strengths.append("GitHub Actions CI detected.")
 
     if not tools.get("github_actions"):
         recommended_steps.append("Add GitHub Actions CI for tests and linting.")
-
     if not tools.get("docker"):
         recommended_steps.append("Add Docker support for local development.")
-
     if tools.get("alembic") and migration_files:
         recommended_steps.append("Add migration validation to CI.")
 
@@ -48,10 +43,8 @@ def create_plan(state: WorkflowState):
 
     if api_routes:
         recommended_steps.append("Add endpoint-level smoke tests for all public API routes.")
-
     if database_models:
         recommended_steps.append("Add database model relationship tests and migration regression tests.")
-
     if "docker-compose.yml" in config_files:
         recommended_steps.append("Add Docker Compose health checks for Postgres, Redis, API, and worker.")
 
@@ -59,19 +52,62 @@ def create_plan(state: WorkflowState):
     recommended_steps.append("Add workflow-level artifact summaries for recruiter-friendly demos.")
 
     return {
-        "implementation_plan": {
-            "summary": "Generated structured implementation plan from repository architecture analysis.",
-            "detected_languages": languages,
-            "detected_tools": tools,
-            "architecture": {
-                "api_route_count": len(api_routes),
-                "database_model_count": len(database_models),
-                "migration_count": len(migration_files),
-                "test_count": len(test_files),
-                "config_files": config_files,
-            },
-            "strengths": strengths,
-            "risks": risks,
-            "recommended_next_steps": recommended_steps,
-        }
+        "summary": "Generated structured implementation plan from repository architecture analysis.",
+        "detected_languages": languages,
+        "detected_tools": tools,
+        "architecture": {
+            "api_route_count": len(api_routes),
+            "database_model_count": len(database_models),
+            "migration_count": len(migration_files),
+            "test_count": len(test_files),
+            "config_files": config_files,
+        },
+        "strengths": strengths,
+        "risks": risks,
+        "recommended_next_steps": recommended_steps,
+        "planner": "rule_based",
     }
+
+
+def _llm_plan(analysis: dict) -> dict:
+    prompt = (
+        "You are a senior engineering-platform architect. "
+        "Given this repository analysis, return a concise JSON implementation plan "
+        "with keys: summary, strengths, risks, recommended_next_steps. "
+        "Do not include markdown.\n\n"
+        f"{json.dumps(analysis, indent=2)}"
+    )
+
+    text = generate_text(prompt)
+    parsed = json.loads(text)
+
+    fallback = _rule_based_plan(analysis)
+    fallback.update(
+        {
+            "summary": parsed.get("summary", fallback["summary"]),
+            "strengths": parsed.get("strengths", fallback["strengths"]),
+            "risks": parsed.get("risks", fallback["risks"]),
+            "recommended_next_steps": parsed.get(
+                "recommended_next_steps",
+                fallback["recommended_next_steps"],
+            ),
+            "planner": "llm",
+        }
+    )
+    return fallback
+
+
+def create_plan(state: WorkflowState):
+    analysis = state["repository_analysis"]
+
+    if llm_available():
+        try:
+            plan = _llm_plan(analysis)
+        except (LLMError, json.JSONDecodeError, TypeError, KeyError):
+            plan = _rule_based_plan(analysis)
+            plan["planner_fallback_reason"] = "llm_failed"
+
+    else:
+        plan = _rule_based_plan(analysis)
+
+    return {"implementation_plan": plan}
