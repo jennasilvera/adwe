@@ -1,16 +1,15 @@
 from datetime import datetime
-
 import logging
 
 from sqlalchemy import select
 
-from adwe.services.audit import record_audit_event
 from adwe.core.constants import MAX_WORKFLOW_RETRIES
 from adwe.db.session import AsyncSessionLocal
 from adwe.models.patch import Patch
 from adwe.models.patch_status import PatchStatus
 from adwe.models.workflow import Workflow
 from adwe.models.workflow_status import WorkflowStatus
+from adwe.services.audit import record_audit_event
 from adwe.workflows.engine import workflow_graph
 from adwe.workers.heartbeat import record_heartbeat
 
@@ -32,7 +31,7 @@ async def run_workflow(ctx, workflow_id: str):
         workflow.started_at = datetime.utcnow()
         await session.commit()
 
-         try:
+        try:
             result = workflow_graph.invoke(
                 {"repository_url": workflow.repository_url}
             )
