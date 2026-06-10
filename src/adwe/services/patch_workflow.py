@@ -30,8 +30,11 @@ def apply_patch_workflow(
 
             if not test_result["passed"]:
                 raise TestExecutionError(
-                    f"Tests failed with exit code {test_result['exit_code']}"
-                )
+                    "Tests failed with exit code "
+                    f"{test_result['exit_code']}\n\n"
+                    f"STDOUT:\n{test_result.get('stdout', '')[-4000:]}\n\n"
+                    f"STDERR:\n{test_result.get('stderr', '')[-4000:]}"
+    )
 
         if dry_run:
             return {
