@@ -66,11 +66,17 @@ def _rule_based_plan(analysis: dict) -> dict:
         "risks": risks,
         "recommended_next_steps": recommended_steps,
         "planner": "rule_based",
+        "planner_trace": {
+            "mode": "rule_based",
+            "prompt": None,
+            "raw_response": None,
+            "fallback_used": False,
+        },
     }
 
 
-def _llm_plan(analysis: dict) -> dict:
-    prompt = (
+def _build_llm_prompt(analysis: dict) -> str:
+    return (
         "You are a senior engineering-platform architect. "
         "Given this repository analysis, return a concise JSON implementation plan "
         "with keys: summary, strengths, risks, recommended_next_steps. "
@@ -78,6 +84,9 @@ def _llm_plan(analysis: dict) -> dict:
         f"{json.dumps(analysis, indent=2)}"
     )
 
+
+def _llm_plan(analysis: dict) -> dict:
+    prompt = _build_llm_prompt(analysis)
     text = generate_text(prompt)
     parsed = json.loads(text)
 
@@ -92,6 +101,12 @@ def _llm_plan(analysis: dict) -> dict:
                 fallback["recommended_next_steps"],
             ),
             "planner": "llm",
+            "planner_trace": {
+                "mode": "llm",
+                "prompt": prompt,
+                "raw_response": text,
+                "fallback_used": False,
+            },
         }
     )
     return fallback
@@ -103,9 +118,11 @@ def create_plan(state: WorkflowState):
     if llm_available():
         try:
             plan = _llm_plan(analysis)
-        except (LLMError, json.JSONDecodeError, TypeError, KeyError):
+        except (LLMError, json.JSONDecodeError, TypeError, KeyError) as exc:
             plan = _rule_based_plan(analysis)
             plan["planner_fallback_reason"] = "llm_failed"
+            plan["planner_trace"]["fallback_used"] = True
+            plan["planner_trace"]["fallback_reason"] = str(exc)
 
     else:
         plan = _rule_based_plan(analysis)
