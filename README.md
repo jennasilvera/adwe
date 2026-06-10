@@ -83,6 +83,27 @@ docs/diagrams/adwe-architecture.mmd
 * Queue metrics
 * Worker heartbeat monitoring
 
+
+### Agentic Workflow Capabilities
+
+ADWE now supports:
+
+- Repository analysis with framework/tooling detection
+- Structured implementation planning
+- Planner trace metadata
+- Dynamic patch target selection
+- Patch preview summaries
+- Patch metadata persistence
+- Human approval workflow
+- Test-gated patch application
+- Git branch creation
+- GitHub pull request creation
+- Pull request persistence
+- Workflow-to-PR linkage
+- Structured audit events
+
+
+
 ### Planned Capabilities
 
 * Real GitHub branch creation
