@@ -138,6 +138,8 @@ async def get_workflow_summary(workflow_id: str):
             "file_count": analysis.get("file_count"),
             "detected_languages": analysis.get("languages"),
             "recommended_next_steps": plan.get("recommended_next_steps"),
+            "planner": plan.get("planner"),
+            "planner_fallback_reason": plan.get("planner_fallback_reason"),
         }
 
 
