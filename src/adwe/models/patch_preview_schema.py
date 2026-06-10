@@ -7,3 +7,5 @@ class PatchPreviewResponse(BaseModel):
     dry_run: bool
     diff_lines: int
     test_command: list[str] | None
+    files_changed: list[str]
+    summary: str
