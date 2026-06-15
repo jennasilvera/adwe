@@ -16,6 +16,25 @@ def _new_file_patch(path: str, content: str) -> str:
     )
 
 
+def _score_target(target_file: str) -> tuple[int, str]:
+    if target_file.startswith(".github/workflows/"):
+        return 95, "CI workflow changes have broad impact across all contributors."
+
+    if "migration" in target_file:
+        return 85, "Migration validation reduces production database deployment risk."
+
+    if "docker" in target_file or "healthcheck" in target_file:
+        return 75, "Docker health checks improve local and CI environment reliability."
+
+    if "api" in target_file:
+        return 65, "API surface documentation improves maintainability and test planning."
+
+    if target_file.startswith("docs/"):
+        return 45, "Documentation improves project clarity but has lower runtime impact."
+
+    return 30, "General repository artifact with limited operational impact."
+
+
 def _default_candidate_targets(analysis: dict, plan: dict) -> list[str]:
     target_file, _ = _select_patch_target(analysis, plan)
     return [target_file]
@@ -49,10 +68,14 @@ def _analysis_markdown(analysis: dict, plan: dict, target_file: str) -> str:
     risks = plan.get("risks", [])
     steps = plan.get("recommended_next_steps", [])
 
+    priority_score, priority_reason = _score_target(target_file)
+
     lines = [
         "# ADWE Generated Artifact",
         "",
         f"Target file: `{target_file}`",
+        f"Priority score: {priority_score}",
+        f"Priority reason: {priority_reason}",
         "",
         "This file was generated from repository analysis and implementation planning.",
         "",
@@ -92,12 +115,15 @@ def _analysis_markdown(analysis: dict, plan: dict, target_file: str) -> str:
 def _build_modification(analysis: dict, plan: dict, target_file: str) -> dict:
     content = _analysis_markdown(analysis, plan, target_file)
     patch = _new_file_patch(target_file, content)
+    priority_score, priority_reason = _score_target(target_file)
 
     return {
         "status": "proposed",
         "summary": f"Generated implementation artifact for {target_file}.",
         "patch": patch,
         "target_file": target_file,
+        "priority_score": priority_score,
+        "priority_reason": priority_reason,
         "based_on": {
             "file_count": analysis.get("file_count"),
             "detected_tools": analysis.get("detected_tools", {}),
@@ -119,6 +145,11 @@ def modify_code(state: WorkflowState):
         _build_modification(analysis, plan, target)
         for target in candidate_targets[:3]
     ]
+
+    code_modifications.sort(
+        key=lambda modification: modification.get("priority_score", 0),
+        reverse=True,
+    )
 
     return {
         "code_modification": code_modifications[0],

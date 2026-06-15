@@ -27,3 +27,6 @@ class Patch(Base):
     summary: Mapped[str | None] = mapped_column(String, nullable=True)
     files_changed: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
     reasoning: Mapped[str | None] = mapped_column(String, nullable=True)
+    priority_score: Mapped[int | None] = mapped_column(nullable=True)
+    priority_reason: Mapped[str | None] = mapped_column(String, nullable=True)
+    

@@ -22,3 +22,5 @@ class PatchRead(BaseModel):
     summary: str | None = None
     files_changed: list[str] | None = None
     reasoning: str | None = None
+    priority_score: int | None = None
+    priority_reason: str | None = None

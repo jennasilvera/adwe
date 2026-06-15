@@ -94,6 +94,9 @@ async def run_workflow(ctx, workflow_id: str):
                                 "Selected from repository analysis and "
                                 "implementation plan."
                             ),
+                            priority_score=code_modification.get("priority_score"),
+                            priority_reason=code_modification.get("priority_reason"),
+
                         )
                     )
 
