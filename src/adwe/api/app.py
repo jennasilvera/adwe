@@ -13,6 +13,7 @@ from adwe.api.queue import router as queue_router
 from adwe.api.queue_metrics import router as queue_metrics_router
 from adwe.api.workflows import router as workflows_router
 from adwe.api.worker_health import router as worker_health_router
+from adwe.api.workflow_leaderboard import router as workflow_leaderboard_router
 from adwe.api.workflow_metrics import router as workflow_metrics_router
 from adwe.core.logging import configure_logging
 from adwe.db.session import engine
@@ -30,6 +31,7 @@ app.add_middleware(RequestIDMiddleware)
 app.include_router(workflows_router)
 app.include_router(worker_health_router)
 app.include_router(workflow_metrics_router)
+app.include_router(workflow_leaderboard_router)
 app.include_router(audit_router)
 app.include_router(patches_router)
 app.include_router(patch_apply_router)
@@ -38,6 +40,7 @@ app.include_router(pull_requests_router)
 app.include_router(pull_request_records_router)
 app.include_router(queue_router)
 app.include_router(queue_metrics_router)
+
 
 Instrumentator().instrument(app).expose(app)
 
