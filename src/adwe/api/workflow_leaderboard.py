@@ -34,10 +34,10 @@ async def workflow_leaderboard():
         entries = []
 
         for workflow_id, repository_url, patch_count in rows:
-            approved_count = await session.scalar(
+            proposed_count = await session.scalar(
                 select(func.count(Patch.id)).where(
                     Patch.workflow_id == workflow_id,
-                    Patch.status == PatchStatus.APPROVED,
+                    Patch.status == PatchStatus.PROPOSED,
                 )
             )
 
@@ -53,7 +53,7 @@ async def workflow_leaderboard():
                     workflow_id=workflow_id,
                     repository_url=repository_url,
                     patch_count=patch_count,
-                    approved_patch_count=approved_count or 0,
+                    approved_patch_count=proposed_count or 0,
                     applied_patch_count=applied_count or 0,
                 )
             )
