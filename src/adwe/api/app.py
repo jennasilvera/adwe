@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from prometheus_fastapi_instrumentator import Instrumentator
 from sqlalchemy import text
 
+from adwe.api.workflow_timeline import router as workflow_timeline_router
 from adwe.api.workflow_analytics import router as workflow_analytics_router
 from adwe.api.audit import router as audit_router
 from adwe.api.middleware import RequestIDMiddleware
@@ -28,7 +29,7 @@ app = FastAPI(
 )
 
 app.add_middleware(RequestIDMiddleware)
-
+app.include_router(workflow_timeline_router)
 app.include_router(workflows_router)
 app.include_router(worker_health_router)
 app.include_router(workflow_metrics_router)
