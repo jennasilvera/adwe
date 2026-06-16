@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from prometheus_fastapi_instrumentator import Instrumentator
 from sqlalchemy import text
 
+from adwe.api.workflow_analytics import router as workflow_analytics_router
 from adwe.api.audit import router as audit_router
 from adwe.api.middleware import RequestIDMiddleware
 from adwe.api.patch_apply import router as patch_apply_router
@@ -32,6 +33,7 @@ app.include_router(workflows_router)
 app.include_router(worker_health_router)
 app.include_router(workflow_metrics_router)
 app.include_router(workflow_leaderboard_router)
+app.include_router(workflow_analytics_router)
 app.include_router(audit_router)
 app.include_router(patches_router)
 app.include_router(patch_apply_router)
