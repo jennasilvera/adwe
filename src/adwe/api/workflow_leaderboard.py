@@ -53,7 +53,7 @@ async def workflow_leaderboard():
                     workflow_id=workflow_id,
                     repository_url=repository_url,
                     patch_count=patch_count,
-                    approved_patch_count=proposed_count or 0,
+                    proposed_patch_count=proposed_count or 0,
                     applied_patch_count=applied_count or 0,
                 )
             )
