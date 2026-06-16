@@ -10,10 +10,10 @@ from adwe.models.workflow_leaderboard_schema import (
     WorkflowLeaderboardResponse,
 )
 
-router = APIRouter(prefix="/v1/workflows", tags=["workflows"])
+router = APIRouter(prefix="/v1/workflow-leaderboard", tags=["workflow-leaderboard"])
 
 
-@router.get("/leaderboard", response_model=WorkflowLeaderboardResponse)
+@router.get("", response_model=WorkflowLeaderboardResponse)
 async def workflow_leaderboard():
     async with AsyncSessionLocal() as session:
         rows = await session.execute(
