@@ -268,6 +268,21 @@ docker compose config
 * GitHub Actions
 * Prometheus
 
+### Patch Prioritization
+
+ADWE ranks generated patch proposals before review.
+
+Each proposed patch includes:
+
+- `priority_score`
+- `priority_reason`
+- `summary`
+- `files_changed`
+- `reasoning`
+
+This allows reviewers to approve high-impact changes first, such as CI workflows, migration validation, Docker health checks, or API surface documentation.
+
+
 ## Roadmap
 
 ### Phase 1 (Completed)
@@ -285,6 +300,7 @@ docker compose config
 * Patch workflow
 * Pull request records
 * Workflow artifact APIs
+
 
 ### Phase 3 (Planned)
 
