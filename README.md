@@ -188,6 +188,11 @@ curl http://localhost:8000/v1/workflows/<workflow_id>/pull-request
 curl http://localhost:8000/v1/workflow-metrics
 ```
 
+### Workflow Metrics Dashboard
+
+```bash
+curl http://localhost:8000/v1/workflow-metrics
+
 ### Queue Metrics
 
 ```bash
